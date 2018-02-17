@@ -1,0 +1,67 @@
+Financial benefit
+ - good propspect customers we should not loose,   ()
+ - late payement  (low risk profile - default - ) 
+ - roll up and roll back
+
+
+The problem is 
+ - The potential customers  are going to default
+ - Delinquent vs default customers  [problem statement]
+ - consecutive missed 3 EMI - you are delinquent
+ - Default customers  - trying to predict - minimize the credit loss
+ - Imblance data - fradulent data
+ - roll up and roll back   [how to do it because of last year   -   30 days 60 days 90 days DPD]     
+       - roll up and roll back chart - at individual customer level
+       - customer segmentation based on age, empluymen type ... 
+	     group data based  on emobraphic   - age, income, empl    
+		    - roll up or roll back at segment level
+			
+ 	   
+ - three types of score card
+ 	-       application score card  - acquisition analytics  []
+               - If I approve and find if the customers will default in 
+        	 - application data
+         	- bureau data
+	-	Behavioural score card =  application + transaction + bureau data   (this is not required)
+
+	-	collection score card = whether you are 30, 60, 90 DPD, roll back or roll over
+
+ - CRISIL - provides 
+ - CIBIL - provides the bureau data
+		- sells the data on a quarterly basis
+ - loan history 	
+ 
+ ========================
+ 
+ Data cleaning and preparation - raman & Nilesh ji
+
+From demographic data 
+
+​1.age -replace all 0 and -ve with WOE 
+​2. Education - blanks make all as 'not captured' category 
+3.remaining all with NA or zero - delete them  and write the assumption
+​4. remove all data with performance tag = NA
+
+CREDIT beuarue 
+​1.Presence.of.open.home.loan ---- 
+​2.Avgas.CC.Utilization.in.last.12.months-replace NA with WOE
+​3.No.of.trades.opened.in.last.6.months-DELETE
+​4.No.of.trades.opened.in.last.6.months
+​5.Presence.of.open.home.loan-- MAKE values with NA = 0
+​6.Outstanding.Balance-- MAKE values with NA = 0
+
+
+
+
+outlier treatment -  Anil ji
+ 1. for all numerical values having outliers - we have to do data mutation using capping an flooring
+
+Feature selection ---Abhineet 
+
+​ 1.. Calculate p value using Chi square for all categorical variables in the merged data set 
+2. Calculate IV for numerical variables 
+​3.for the selected features calculate VIF (Multiocllenarity) and remove ones with high >5  
+​
+
+================================
+ 
