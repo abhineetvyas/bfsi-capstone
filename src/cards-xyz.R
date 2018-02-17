@@ -45,21 +45,23 @@ library(magrittr)
 #------------------------------------------------------
 # TO solve this business problem statement of acquisitionanalytics we are applying CRISP-DM framework  which 
 # includes the following steps:
-# 1. Business Understanding
+# 1. Business Understanding - Delinquent vs default customers  [problem statement]
 # 2. Data Understanding
      #2.1 check for null values, sanity check, duplicate records
-     #2.2 Univariate analysis for categorical variables 
-          #2.2.1 Histogram/Bar chart to understand the distribution
-          #2.2.2 Box plot to identify the outliers
+     #2.2 Univariate and bivariate analysis for categorical variables 
+          #2.2.1 Histogram/Bar chart to understand the distribution and try to get the business insight
+          #2.2.2 Box plot  to identify the outliers  (to be discussed)
      #2.3 univarivariate and bivariate analysis for continous variables
-          #2.3.1 Histogram to understand the distribution
+          #2.3.1 Histogram to understand the distribution and get the business insight
           #2.3.2 Box plot to identify the outliers
 # 3. Data Preparation
      #3.1 Remove or mutate missing values based on the business justification
-     #3.2 outlier treatment
-# 4. Feature selection
-     #4.1 Chi-square test for feature selection for categorical variables
-     #4.2 IV test for feature selection for continuous  variables
+     #3.2 duplicate records with respect to application id need to be removed
+     #3.3 outlier treatment also based on the business justification
+     #3.4 Feature selection
+          #3.3.1 Chi-square test for feature selection for categorical variables
+          #3.3.2 IV test for feature selection for continuous  variables
+          #3.3.3 Missing values treatement for contunuous variables using WOE
 # 4. Data Modeling - Prepare the below  different models
      #4.1 logistic regression - starts with it
      #4.2 Decision tree/random forest
@@ -67,7 +69,8 @@ library(magrittr)
 # 5. Model Evaluation - select the best model based on the below criteria
       #Accuracy,Sensitivity, Specificity of the model
       #KS statistics
-      #Application score card
+      #Application score card based on the probability
+      #vintage curve
 # 6. Model Deployment
 
 #----------------------------------------------------
