@@ -1,4 +1,4 @@
-Financial benefit
+﻿Financial benefit
  - good propspect customers we should not loose,   ()
  - late payement  (low risk profile - default - ) 
  - roll up and roll back
@@ -15,6 +15,8 @@ The problem is
        - customer segmentation based on age, empluymen type ... 
 	     group data based  on emobraphic   - age, income, empl    
 		    - roll up or roll back at segment level
+
+
 			
  	   
  - three types of score card
