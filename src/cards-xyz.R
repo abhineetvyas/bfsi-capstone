@@ -7,6 +7,8 @@
 #Set the working directory
 setwd("D:/Abhineet/Study/IIIT-B/7. Capstone Project/1. Capstone-BFS")
 
+install.packages("knitr")
+
 library(MASS)
 library(car)
 library(e1071)
@@ -20,6 +22,8 @@ library(outliers)
 library(Hmisc)
 library(dplyr)
 library(magrittr)
+library(knitr)
+library(data.table)
 
 #-------------------------------------------------------
 #Synopsis:
@@ -32,7 +36,7 @@ library(magrittr)
 #  people to use their services.
 
 #-------------------------------------------------------
-#Business Objective: 
+#Business Objective: Delinquent vs default customers  [problem statement]
 #-------------------------------------------------------
 #  As We are that credit X it has experienced an increase in credit loss. The CEO believes that
 #  the best strategy to mitigate credit risk is to 'acquire the right customers'.
@@ -45,23 +49,22 @@ library(magrittr)
 #------------------------------------------------------
 # TO solve this business problem statement of acquisitionanalytics we are applying CRISP-DM framework  which 
 # includes the following steps:
-# 1. Business Understanding - Delinquent vs default customers  [problem statement]
+# 1. Business Understanding
 # 2. Data Understanding
      #2.1 check for null values, sanity check, duplicate records
-     #2.2 Univariate and bivariate analysis for categorical variables 
-          #2.2.1 Histogram/Bar chart to understand the distribution and try to get the business insight
-          #2.2.2 Box plot  to identify the outliers  (to be discussed)
+     #2.2 Univariate analysis for categorical variables 
+          #2.2.1 Histogram/Bar chart to understand the distribution
+          #2.2.2 Box plot to identify the outliers
      #2.3 univarivariate and bivariate analysis for continous variables
-          #2.3.1 Histogram to understand the distribution and get the business insight
+          #2.3.1 Histogram to understand the distribution
           #2.3.2 Box plot to identify the outliers
 # 3. Data Preparation
      #3.1 Remove or mutate missing values based on the business justification
-     #3.2 duplicate records with respect to application id need to be removed
-     #3.3 outlier treatment also based on the business justification
-     #3.4 Feature selection
-          #3.3.1 Chi-square test for feature selection for categorical variables
-          #3.3.2 IV test for feature selection for continuous  variables
-          #3.3.3 Missing values treatement for contunuous variables using WOE
+     #3.2 outlier treatment
+     #3.3 data imputation for missing values with WOE
+# 4. Feature selection
+     #4.1 Chi-square test for feature selection for categorical variables
+     #4.2 IV test for feature selection for continuous  variables
 # 4. Data Modeling - Prepare the below  different models
      #4.1 logistic regression - starts with it
      #4.2 Decision tree/random forest
@@ -322,6 +325,24 @@ box_theme_y<- theme(axis.line.y=element_blank(),axis.title.y=element_blank(),
                     axis.ticks.y=element_blank(), axis.text.y=element_blank(),
                     legend.position="none")
 
+
+#Box plot for DPD values 
+plot_grid(ggplot(credit_card_applications, aes(x=Performance.Tag,y=No.of.times.90.DPD.or.worse.in.last.6.months, fill=Performance.Tag))+ geom_boxplot(width=0.2)+
+            coord_flip() + box_theme_y,
+          ggplot(credit_card_applications, aes(x=Performance.Tag,y=No.of.times.90.DPD.or.worse.in.last.12.months, fill=Performance.Tag))+ geom_boxplot(width=0.2)+
+            coord_flip() + box_theme_y,
+          ggplot(credit_card_applications, aes(x=Performance.Tag,y=No.of.times.60.DPD.or.worse.in.last.6.months, fill=Performance.Tag))+ geom_boxplot(width=0.2)+
+            coord_flip() + box_theme_y,
+          ggplot(credit_card_applications, aes(x=Performance.Tag,y=No.of.times.60.DPD.or.worse.in.last.12.months, fill=Performance.Tag))+ geom_boxplot(width=0.2)+
+            coord_flip() + box_theme_y,
+          ggplot(credit_card_applications, aes(x=Performance.Tag,y=No.of.times.30.DPD.or.worse.in.last.6.months, fill=Performance.Tag))+ geom_boxplot(width=0.2)+
+            coord_flip() + box_theme_y,
+          ggplot(credit_card_applications, aes(x=Performance.Tag,y=No.of.times.30.DPD.or.worse.in.last.12.months, fill=Performance.Tag))+ geom_boxplot(width=0.2)+
+            coord_flip() + box_theme_y,
+          align = "v",nrow = 4)
+
+
+
 #Box plot for numerical categorial variables
 #--------------------------------------------
 credit_card_applications$Age <- as.numeric(credit_card_applications$Age)
@@ -430,6 +451,16 @@ plot_grid(ggplot(credit_card_applications, aes(x=Performance.Tag,y=Outstanding.B
             coord_flip() + box_theme_y,
           align = "v",nrow = 4)
 
+plot_grid(ggplot(credit_card_applications, aes(x=Performance.Tag,y=No.of.months.in.current.residence, fill=Performance.Tag))+ geom_boxplot(width=0.2)+ 
+            coord_flip() +theme(legend.position="none"),
+          ggplot(credit_card_applications, aes(x=Performance.Tag,y=No.of.months.in.current.company , fill=Performance.Tag))+ geom_boxplot(width=0.2)+
+            coord_flip() + box_theme_y,
+          align = "v",nrow = 4)
+
+# Variales 'No.of.months.in.current.residence'  seems to be significant and sees large number of default in the range of 20 to 25, also it has no outliers
+# Variales 'No.of.months.in.current.company'  seems to be significant and sees large number of default in the range of 30 to 40, also it has no outliers  
+
+
 #by looking into the box plot and histogram
 # Variable 'Outstanding.Balance.in.lakh'  sees large number of default in the range of 5 to 10 lakh and it has large number of outliers as well
 
@@ -498,18 +529,20 @@ plot_grid(ggplot(credit_card_applications, aes(x=Performance.Tag,y=No.of.months.
 
 str(credit_card_applications)
 categorical_variables <- c("Gender","Marital.Status..at.the.time.of.application.","No.of.dependents",
-                           "Education","Profession","Type.of.residence","Presence.of.open.home.loan","Presence.of.open.auto.loan","Performance.Tag.x")
+                           "Education","Profession","Type.of.residence","Presence.of.open.home.loan","Presence.of.open.auto.loan","Performance.Tag.x",
+                           "No.of.times.90.DPD.or.worse.in.last.6.months","No.of.times.90.DPD.or.worse.in.last.12.months",
+                           "No.of.times.60.DPD.or.worse.in.last.6.months","No.of.times.60.DPD.or.worse.in.last.12.months",
+                           "No.of.times.30.DPD.or.worse.in.last.6.months","No.of.times.30.DPD.or.worse.in.last.12.months")
 
+#continuous variables
+continuous_variables <- c("Income","No.of.months.in.current.residence","No.of.months.in.current.company","Performance.Tag.x",
+                          "Avgas.CC.Utilization.in.last.12.months","No.of.trades.opened.in.last.6.months","No.of.trades.opened.in.last.12.months","No.of.PL.trades.opened.in.last.6.months",     
+                          "No.of.PL.trades.opened.in.last.12.months","No.of.Inquiries.in.last.6.months","No.of.Inquiries.in.last.12.months","Outstanding.Balance.in.lakh", 
+                          "Total.No.of.Trades") 
 
-continuous_variables <- c("Income","No.of.months.in.current.residence","No.of.months.in.current.company","Performance.Tag.x","No.of.times.90.DPD.or.worse.in.last.6.months",
-                           "No.of.times.60.DPD.or.worse.in.last.6.months","No.of.times.30.DPD.or.worse.in.last.6.months","No.of.times.90.DPD.or.worse.in.last.12.months",
-                           "No.of.times.60.DPD.or.worse.in.last.12.months","No.of.times.30.DPD.or.worse.in.last.12.months","Avgas.CC.Utilization.in.last.12.months",      
-                           "No.of.trades.opened.in.last.6.months","No.of.trades.opened.in.last.12.months","No.of.PL.trades.opened.in.last.6.months",     
-                           "No.of.PL.trades.opened.in.last.12.months","No.of.Inquiries.in.last.6.months","No.of.Inquiries.in.last.12.months","Outstanding.Balance.in.lakh", 
-                           "Total.No.of.Trades") 
-
-credit_card_applications_numerical_var <- credit_card_applications[,continuous_variables]
 credit_card_applications_categorical_var <- credit_card_applications[,categorical_variables]
+credit_card_applications_numerical_var <- credit_card_applications[,continuous_variables]
+
 
 
 #Feature selection
@@ -559,6 +592,42 @@ table(credit_card_applications_categorical_var$Presence.of.open.auto.loan, credi
 chisq.test(credit_card_applications_categorical_var$Presence.of.open.auto.loan, credit_card_applications_categorical_var$Performance.Tag.x, correct=FALSE)
 #since p-value = 0.03454 < 0.05, we reject the null hypothesis and conclude that variable  'Presence.of.open.auto.loan' is significant 
 
+#No.of.times.90.DPD.or.worse.in.last.6.months - check if it is significant based on p value from chi square test
+table(credit_card_applications_categorical_var$No.of.times.90.DPD.or.worse.in.last.6.months, credit_card_applications_categorical_var$Performance.Tag.x)
+chisq.test(credit_card_applications_categorical_var$No.of.times.90.DPD.or.worse.in.last.6.months, credit_card_applications_categorical_var$Performance.Tag.x, correct=FALSE)
+#since p-value = p-value < 2.2e-16, we reject the null hypothesis and conclude that variable  'No.of.times.90.DPD.or.worse.in.last.6.months' is significant 
+
+
+#No.of.times.90.DPD.or.worse.in.last.12.months - check if it is significant based on p value from chi square test
+table(credit_card_applications_categorical_var$No.of.times.90.DPD.or.worse.in.last.12.months, credit_card_applications_categorical_var$Performance.Tag.x)
+chisq.test(credit_card_applications_categorical_var$No.of.times.90.DPD.or.worse.in.last.12.months, credit_card_applications_categorical_var$Performance.Tag.x, correct=FALSE)
+#since p-value = p-value < 2.2e-16, we reject the null hypothesis and conclude that variable  'No.of.times.90.DPD.or.worse.in.last.12.months' is significant 
+
+#No.of.times.60.DPD.or.worse.in.last.6.months - check if it is significant based on p value from chi square test
+table(credit_card_applications_categorical_var$No.of.times.60.DPD.or.worse.in.last.6.months, credit_card_applications_categorical_var$Performance.Tag.x)
+chisq.test(credit_card_applications_categorical_var$No.of.times.60.DPD.or.worse.in.last.6.months, credit_card_applications_categorical_var$Performance.Tag.x, correct=FALSE)
+#since p-value = p-value < 2.2e-16, we reject the null hypothesis and conclude that variable  'No.of.times.60.DPD.or.worse.in.last.6.months' is significant 
+
+
+#No.of.times.60.DPD.or.worse.in.last.12.months - check if it is significant based on p value from chi square test
+table(credit_card_applications_categorical_var$No.of.times.60.DPD.or.worse.in.last.12.months, credit_card_applications_categorical_var$Performance.Tag.x)
+chisq.test(credit_card_applications_categorical_var$No.of.times.60.DPD.or.worse.in.last.12.months, credit_card_applications_categorical_var$Performance.Tag.x, correct=FALSE)
+#since p-value = p-value < 2.2e-16, we reject the null hypothesis and conclude that variable  'No.of.times.60.DPD.or.worse.in.last.12.months' is significant 
+
+
+#No.of.times.30.DPD.or.worse.in.last.6.months - check if it is significant based on p value from chi square test
+table(credit_card_applications_categorical_var$No.of.times.30.DPD.or.worse.in.last.6.months, credit_card_applications_categorical_var$Performance.Tag.x)
+chisq.test(credit_card_applications_categorical_var$No.of.times.30.DPD.or.worse.in.last.6.months, credit_card_applications_categorical_var$Performance.Tag.x, correct=FALSE)
+#since p-value = p-value < 2.2e-16, we reject the null hypothesis and conclude that variable  'No.of.times.30.DPD.or.worse.in.last.6.months' is significant 
+
+
+#No.of.times.30.DPD.or.worse.in.last.12.months - check if it is significant based on p value from chi square test
+table(credit_card_applications_categorical_var$No.of.times.30.DPD.or.worse.in.last.12.months, credit_card_applications_categorical_var$Performance.Tag.x)
+chisq.test(credit_card_applications_categorical_var$No.of.times.30.DPD.or.worse.in.last.12.months, credit_card_applications_categorical_var$Performance.Tag.x, correct=FALSE)
+#since p-value = p-value < 2.2e-16, we reject the null hypothesis and conclude that variable  'No.of.times.30.DPD.or.worse.in.last.12.months' is significant 
+
+#ALL the DPD  variables are significant for chi square test, now we have to multicollinaearity among them so that we can reduce the variable 
+# which is function of others
 
 #WOE to do the feature selection for continuous variables
 #--------------------------------------------------------
@@ -567,14 +636,79 @@ str(credit_card_applications)
 IV <- create_infotables(data=credit_card_applications_numerical_var, y="Performance.Tag.x", bins=10, parallel=TRUE)
 IV$Summary
 
+knitr::kable(head(IV$Summary))
+
+knitr::kable(IV$Tables$Avgas.CC.Utilization.in.last.12.months)
+knitr::kable(IV$Tables$No.of.trades.opened.in.last.12.months)
+knitr::kable(IV$Tables$No.of.PL.trades.opened.in.last.12.months)
+knitr::kable(IV$Tables$No.of.Inquiries.in.last.12.months)
+
+#role rate matrix
+#----------------
+columes_for_role_rate_matrix_dpd_6_months <- c("No.of.times.30.DPD.or.worse.in.last.6.months",
+                           "No.of.times.60.DPD.or.worse.in.last.6.months",
+                           "No.of.times.90.DPD.or.worse.in.last.6.months")
+
+columes_for_role_rate_matrix_dpd_12_months <- c("No.of.times.30.DPD.or.worse.in.last.12.months",
+                                  "No.of.times.60.DPD.or.worse.in.last.12.months",
+                                  "No.of.times.90.DPD.or.worse.in.last.12.months")
+
+df_role_rate_matrix_dpd_6_months <- credit_card_applications[,columes_for_role_rate_matrix_dpd_6_months]
+
+df_role_rate_matrix_dpd_12_months <- credit_card_applications[,columes_for_role_rate_matrix_dpd_12_months]
+
+View(df_role_rate_matrix_dpd_12_months)
+
+trans.matrix <- function(X, prob=T)
+{
+  tt <- table( c(X[,-ncol(X)]), c(X[,-1]) )
+  if(prob) tt <- tt / rowSums(tt)
+  tt
+}
+
+mat_role_rate_dpd_dpd_6_months <- trans.matrix(as.matrix(df_role_rate_matrix_dpd_6_months))
+
+mat_role_rate_dpd_dpd_12_months <- trans.matrix(as.matrix(df_role_rate_matrix_dpd_12_months))
+
+old_cols_dpd_6_months <- colnames(mat_role_rate_dpd_dpd_6_months)
+
+new_cols_dpd_6_months <- c("30.DPD.last.6.mon","60.DPD.last.6.mon","90.DPD.last.6.mon")
+
+old_cols_dpd_12_months <- colnames(mat_role_rate_dpd_dpd_12_months)
+
+new_cols_dpd_12_months <- c("30.DPD.last.12.mon","60.DPD.last.12.mon","90.DPD.last.12.mon")
+
+mat_role_rate_dpd_dpd_6_months
+colnames(mat_role_rate_dpd_dpd_6_months) <- c("current","0-29","30-59","60-89","90-119","120+")
+rownames(mat_role_rate_dpd_dpd_6_months) <- c("current","0-29","30-59","60-89","90-119","120+","Charged Off", "Paid")
+
+mat_role_rate_dpd_dpd_12_months
+
+colnames(mat_role_rate_dpd_dpd_12_months) <- c("current","0-29","30-59","60-89","90-119","120-149","150-179","180+")
+rownames(mat_role_rate_dpd_dpd_12_months) <- c("current","0-29","30-59","60-89","90-119","120-149","150-179","180+","Charged Off","Paid")
+mat_role_rate_dpd_dpd_12_months
+
+# Correlation between categorical variables
+#-----------------------------------------
+#rename the long column names to short column names to better visualize the corelation matrixs
+
+new_column_names_categorical <- c("perf.tag","Gender","Marital.Status","No.of.dependents",
+                                  "Education","Profession","Type.of.residence","home.loan","auto.loan",
+                                  "90.DPD.6.mon","90.DPD.12.mon",
+                                  "60.DPD.6.mon","60.DPD.12.mon",
+                                  "30.DPD.6.mon","30.DPD.12.mon"     
+                      ) 
+
+#TODO - to find the corelation between the DPD significant variables
 
 # Correlation between numeric variables
 #-----------------------------------------
-#rename the long column names to short column names to better visulize the corelation matrixs
-new_column_names <- c("Income","mon.curr.res","mon.curr.com","perf.tag","90.DPD.6.mon",
-                      "60.DPD.6.mon","30.DPD.6.mon","90.DPD.12.mon",
-                      "60.DPD.12.mon","30.DPD.12.mon","CC.Util.12.mon",      
-                      "trades.6.mon","trades.12.mon","PL.trades.6.mon",     
+#rename the long column names to short column names to better visualize the corelation matrixs
+
+
+
+new_column_names_continuous <- c("Income","mon.curr.res","mon.curr.com","perf.tag",
+                                 "CC.Util.12.mon","trades.6.mon","trades.12.mon","PL.trades.6.mon",     
                       "PL.trades.12.mon","Inq.6.mon","Inq.12.mons","Out.Bal", 
                       "Trades") 
 x <- credit_card_applications_numerical_var
