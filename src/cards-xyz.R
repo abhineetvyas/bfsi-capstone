@@ -7,7 +7,7 @@
 #Set the working directory
 setwd("D:/Abhineet/Study/IIIT-B/7. Capstone Project/1. Capstone-BFS")
 
-install.packages("knitr")
+#install.packages("knitr")
 
 library(MASS)
 library(car)
@@ -108,12 +108,12 @@ sum(duplicated(credit_bureau_data))
 # Check duplicate records with respect to application id in demographic_data
 demographic_data[duplicated(demographic_data$Application.ID),]$Application.ID 
 # Application Ids viz.  765011468, 653287861, 671989187 are duplicate
-demographic_data <- demographic_data[!duplicated(demographic_data), ]
+demographic_data <- demographic_data[which(!duplicated(demographic_data$Application.ID)), ]
 
 # Check duplicate records with respect to application id in credit_bureau_data
 credit_bureau_data[duplicated(credit_bureau_data$Application.ID),]$Application.ID 
 # Application Ids viz.  765011468, 653287861, 671989187 are duplicate
-credit_bureau_data <- credit_bureau_data[!duplicated(credit_bureau_data), ]
+credit_bureau_data <- credit_bureau_data[which(!duplicated(credit_bureau_data$Application.ID)), ]
 
 #Check for missing Values
 colSums(is.na(demographic_data))
@@ -135,7 +135,7 @@ demographic_data$No.of.dependents[is.na(demographic_data$No.of.dependents)] <- 0
 # Now lets merge the credit burew data with demographic data for all the applications
 credit_card_applications <- merge(x = demographic_data, y = credit_bureau_data, by = "Application.ID", all = TRUE)
 write.csv(credit_card_applications, "credit_card_applications.csv")
-credit_card_applications$Performance.Tag <- as.factor(credit_card_applications$Performance.Tag.x)
+credit_card_applications$Performance.Tag <- credit_card_applications$Performance.Tag.x
 credit_card_applications <- credit_card_applications[ , !(names(credit_card_applications) %in% c("Performance.Tag.x","Performance.Tag.y"))]
 
 summary(credit_card_applications)
@@ -148,6 +148,9 @@ str(credit_card_applications)
 
 # Perform Exploratory Data Analysis
 credit_card_eda <- credit_card_applications
+factor(credit_card_eda$Performance.Tag)
+credit_card_eda$Performance.Tag <- as.factor(credit_card_eda$Performance.Tag)
+
 # 1. Education
 unique(credit_card_eda$Education)
 credit_card_eda$Education[credit_card_eda$Education==""]<-"Others"
@@ -241,9 +244,9 @@ ggplot(credit_card_eda, aes(IncomeRange, fill = Performance.Tag)) +
 # 10.  No.of.times.30.DPD.or.worse.in.last.6.months
 unique(credit_card_eda$No.of.times.30.DPD.or.worse.in.last.6.months)
 credit_card_eda_30DPD_grp <- group_by(credit_card_eda, No.of.times.30.DPD.or.worse.in.last.6.months,Performance.Tag)
-credit_card_eda_30DPD <-  summarise(credit_card_eda_30DPD_grp,AvgOutstanding = mean(Outstanding.Balance))
+credit_card_eda_30DPD_6 <-  summarise(credit_card_eda_30DPD_grp,AvgOutstanding = mean(Outstanding.Balance))
 plot_grid(
-ggplot(data = credit_card_eda_30DPD, aes(x=No.of.times.30.DPD.or.worse.in.last.6.months,
+ggplot(data = credit_card_eda_30DPD_6, aes(x=No.of.times.30.DPD.or.worse.in.last.6.months,
                                          y = AvgOutstanding, fill = Performance.Tag,
                                          col = Performance.Tag)) + geom_line(size = 1.5),
 ggplot(data = credit_card_eda, aes(x=No.of.times.30.DPD.or.worse.in.last.6.months, fill = Performance.Tag)) + 
@@ -252,9 +255,9 @@ ggplot(data = credit_card_eda, aes(x=No.of.times.30.DPD.or.worse.in.last.6.month
 # 11.  No.of.times.60.DPD.or.worse.in.last.6.months
 unique(credit_card_eda$No.of.times.60.DPD.or.worse.in.last.6.months)
 credit_card_eda_60DPD_grp <- group_by(credit_card_eda, No.of.times.60.DPD.or.worse.in.last.6.months,Performance.Tag)
-credit_card_eda_60DPD <-  summarise(credit_card_eda_60DPD_grp,AvgOutstanding = mean(Outstanding.Balance))
+credit_card_eda_60DPD_6 <-  summarise(credit_card_eda_60DPD_grp,AvgOutstanding = mean(Outstanding.Balance))
 plot_grid(
-  ggplot(data = credit_card_eda_60DPD, aes(x=No.of.times.60.DPD.or.worse.in.last.6.months,
+  ggplot(data = credit_card_eda_60DPD_6, aes(x=No.of.times.60.DPD.or.worse.in.last.6.months,
                                            y = AvgOutstanding, fill = Performance.Tag,
                                            col = Performance.Tag)) + geom_line(size = 1.5),
   ggplot(data = credit_card_eda, aes(x=No.of.times.60.DPD.or.worse.in.last.6.months, fill = Performance.Tag)) + 
@@ -263,9 +266,9 @@ plot_grid(
 # 12.  No.of.times.90.DPD.or.worse.in.last.6.months
 unique(credit_card_eda$No.of.times.90.DPD.or.worse.in.last.6.months)
 credit_card_eda_90DPD_grp <- group_by(credit_card_eda, No.of.times.90.DPD.or.worse.in.last.6.months,Performance.Tag)
-credit_card_eda_90DPD <-  summarise(credit_card_eda_90DPD_grp,AvgOutstanding = mean(Outstanding.Balance))
+credit_card_eda_90DPD_6 <-  summarise(credit_card_eda_90DPD_grp,AvgOutstanding = mean(Outstanding.Balance))
 plot_grid(
-  ggplot(data = credit_card_eda_90DPD, aes(x=No.of.times.90.DPD.or.worse.in.last.6.months,
+  ggplot(data = credit_card_eda_90DPD_6, aes(x=No.of.times.90.DPD.or.worse.in.last.6.months,
                                            y = AvgOutstanding, fill = Performance.Tag,
                                            col = Performance.Tag)) + geom_line(size = 1.5),
   ggplot(data = credit_card_eda, aes(x=No.of.times.90.DPD.or.worse.in.last.6.months, fill = Performance.Tag)) + 
@@ -274,9 +277,9 @@ plot_grid(
 # 13.  No.of.times.30.DPD.or.worse.in.last.12.months
 unique(credit_card_eda$No.of.times.30.DPD.or.worse.in.last.12.months)
 credit_card_eda_30DPD_grp <- group_by(credit_card_eda, No.of.times.30.DPD.or.worse.in.last.12.months,Performance.Tag)
-credit_card_eda_30DPD <-  summarise(credit_card_eda_30DPD_grp,AvgOutstanding = mean(Outstanding.Balance))
+credit_card_eda_30DPD_12 <-  summarise(credit_card_eda_30DPD_grp,AvgOutstanding = mean(Outstanding.Balance))
 plot_grid(
-  ggplot(data = credit_card_eda_30DPD, aes(x=No.of.times.30.DPD.or.worse.in.last.12.months,
+  ggplot(data = credit_card_eda_30DPD_12, aes(x=No.of.times.30.DPD.or.worse.in.last.12.months,
                                            y = AvgOutstanding, fill = Performance.Tag,
                                            col = Performance.Tag)) + geom_line(size = 1.5),
   ggplot(data = credit_card_eda, aes(x=No.of.times.30.DPD.or.worse.in.last.12.months, fill = Performance.Tag)) + 
@@ -285,9 +288,9 @@ plot_grid(
 # 14.  No.of.times.60.DPD.or.worse.in.last.12.months
 unique(credit_card_eda$No.of.times.60.DPD.or.worse.in.last.12.months)
 credit_card_eda_60DPD_grp <- group_by(credit_card_eda, No.of.times.60.DPD.or.worse.in.last.12.months,Performance.Tag)
-credit_card_eda_60DPD <-  summarise(credit_card_eda_60DPD_grp,AvgOutstanding = mean(Outstanding.Balance))
+credit_card_eda_60DPD_12 <-  summarise(credit_card_eda_60DPD_grp,AvgOutstanding = mean(Outstanding.Balance))
 plot_grid(
-  ggplot(data = credit_card_eda_60DPD, aes(x=No.of.times.60.DPD.or.worse.in.last.12.months,
+  ggplot(data = credit_card_eda_60DPD_12, aes(x=No.of.times.60.DPD.or.worse.in.last.12.months,
                                            y = AvgOutstanding, fill = Performance.Tag,
                                            col = Performance.Tag)) + geom_line(size = 1.5),
   ggplot(data = credit_card_eda, aes(x=No.of.times.60.DPD.or.worse.in.last.12.months, fill = Performance.Tag)) + 
@@ -296,13 +299,40 @@ plot_grid(
 # 15.  No.of.times.90.DPD.or.worse.in.last.12.months
 unique(credit_card_eda$No.of.times.90.DPD.or.worse.in.last.12.months)
 credit_card_eda_90DPD_grp <- group_by(credit_card_eda, No.of.times.90.DPD.or.worse.in.last.12.months,Performance.Tag)
-credit_card_eda_90DPD <-  summarise(credit_card_eda_90DPD_grp,AvgOutstanding = mean(Outstanding.Balance))
+credit_card_eda_90DPD_12 <-  summarise(credit_card_eda_90DPD_grp,AvgOutstanding = mean(Outstanding.Balance))
 plot_grid(
-  ggplot(data = credit_card_eda_90DPD, aes(x=No.of.times.90.DPD.or.worse.in.last.12.months,
+  ggplot(data = credit_card_eda_90DPD_12, aes(x=No.of.times.90.DPD.or.worse.in.last.12.months,
                                            y = AvgOutstanding, fill = Performance.Tag,
                                            col = Performance.Tag)) + geom_line(size = 1.5),
   ggplot(data = credit_card_eda, aes(x=No.of.times.90.DPD.or.worse.in.last.12.months, fill = Performance.Tag)) + 
     geom_bar(stat = "count", position = "dodge"))
+
+
+plot_grid(
+  ggplot(data = credit_card_eda_30DPD_6, aes(x=No.of.times.30.DPD.or.worse.in.last.6.months,
+                                           y = AvgOutstanding, fill = Performance.Tag,
+                                           col = Performance.Tag)) + geom_line(size = 1.5),
+  
+  ggplot(data = credit_card_eda_60DPD_6, aes(x=No.of.times.60.DPD.or.worse.in.last.6.months,
+                                           y = AvgOutstanding, fill = Performance.Tag,
+                                           col = Performance.Tag)) + geom_line(size = 1.5),
+  
+  ggplot(data = credit_card_eda_90DPD_6, aes(x=No.of.times.90.DPD.or.worse.in.last.6.months,
+                                           y = AvgOutstanding, fill = Performance.Tag,
+                                           col = Performance.Tag)) + geom_line(size = 1.5),
+  
+  ggplot(data = credit_card_eda_30DPD_12, aes(x=No.of.times.30.DPD.or.worse.in.last.12.months,
+                                           y = AvgOutstanding, fill = Performance.Tag,
+                                           col = Performance.Tag)) + geom_line(size = 1.5),
+  
+  ggplot(data = credit_card_eda_60DPD_12, aes(x=No.of.times.60.DPD.or.worse.in.last.12.months,
+                                           y = AvgOutstanding, fill = Performance.Tag,
+                                           col = Performance.Tag)) + geom_line(size = 1.5),
+  
+  ggplot(data = credit_card_eda_90DPD_12, aes(x=No.of.times.90.DPD.or.worse.in.last.12.months,
+                                           y = AvgOutstanding, fill = Performance.Tag,
+                                           col = Performance.Tag)) + geom_line(size = 1.5)
+)
 
 #16 Avgas CC Utilization in last 12 months
 summary(credit_card_eda$Avgas.CC.Utilization.in.last.12.months)
@@ -529,13 +559,13 @@ plot_grid(ggplot(credit_card_applications, aes(x=Performance.Tag,y=No.of.months.
 
 str(credit_card_applications)
 categorical_variables <- c("Gender","Marital.Status..at.the.time.of.application.","No.of.dependents",
-                           "Education","Profession","Type.of.residence","Presence.of.open.home.loan","Presence.of.open.auto.loan","Performance.Tag.x",
+                           "Education","Profession","Type.of.residence","Presence.of.open.home.loan","Presence.of.open.auto.loan","Performance.Tag",
                            "No.of.times.90.DPD.or.worse.in.last.6.months","No.of.times.90.DPD.or.worse.in.last.12.months",
                            "No.of.times.60.DPD.or.worse.in.last.6.months","No.of.times.60.DPD.or.worse.in.last.12.months",
                            "No.of.times.30.DPD.or.worse.in.last.6.months","No.of.times.30.DPD.or.worse.in.last.12.months")
 
 #continuous variables
-continuous_variables <- c("Income","No.of.months.in.current.residence","No.of.months.in.current.company","Performance.Tag.x",
+continuous_variables <- c("Income","No.of.months.in.current.residence","No.of.months.in.current.company","Performance.Tag",
                           "Avgas.CC.Utilization.in.last.12.months","No.of.trades.opened.in.last.6.months","No.of.trades.opened.in.last.12.months","No.of.PL.trades.opened.in.last.6.months",     
                           "No.of.PL.trades.opened.in.last.12.months","No.of.Inquiries.in.last.6.months","No.of.Inquiries.in.last.12.months","Outstanding.Balance.in.lakh", 
                           "Total.No.of.Trades") 
@@ -632,8 +662,10 @@ chisq.test(credit_card_applications_categorical_var$No.of.times.30.DPD.or.worse.
 #WOE to do the feature selection for continuous variables
 #--------------------------------------------------------
 colnames(credit_card_applications_numerical_var)
-str(credit_card_applications)
-IV <- create_infotables(data=credit_card_applications_numerical_var, y="Performance.Tag.x", bins=10, parallel=TRUE)
+str(credit_card_applications_numerical_var)
+credit_card_applications_numerical_var$Performance.Tag <- as.integer(credit_card_applications_numerical_var$Performance.Tag)
+class(credit_card_eda$Performance.Tag)
+IV <- create_infotables(data=credit_card_applications_numerical_var, y="Performance.Tag", bins=10, parallel=TRUE)
 IV$Summary
 
 knitr::kable(head(IV$Summary))
@@ -682,11 +714,11 @@ mat_role_rate_dpd_dpd_6_months
 colnames(mat_role_rate_dpd_dpd_6_months) <- c("current","0-29","30-59","60-89","90-119","120+")
 rownames(mat_role_rate_dpd_dpd_6_months) <- c("current","0-29","30-59","60-89","90-119","120+","Charged Off", "Paid")
 
-mat_role_rate_dpd_dpd_12_months
+write.csv(mat_role_rate_dpd_dpd_6_months, "mat_role_rate_dpd_dpd_6_months.csv")
 
 colnames(mat_role_rate_dpd_dpd_12_months) <- c("current","0-29","30-59","60-89","90-119","120-149","150-179","180+")
 rownames(mat_role_rate_dpd_dpd_12_months) <- c("current","0-29","30-59","60-89","90-119","120-149","150-179","180+","Charged Off","Paid")
-mat_role_rate_dpd_dpd_12_months
+write.csv(mat_role_rate_dpd_dpd_12_months, "mat_role_rate_dpd_dpd_12_months.csv")
 
 # Correlation between categorical variables
 #-----------------------------------------
@@ -792,3 +824,13 @@ chisq.test(cc_applications_companyYrs)
 cc_applications_income <- table(credit_card_eda$Performance.Tag, credit_card_eda$IncomeRange)
 chisq.test(cc_applications_income)
 # X-squared = 182.91, df = 62, p-value = 0.00000000000000022
+
+# 10. Education - Null hypothesis is Education is insignificant in deciding customer will default
+summary(credit_card_eda$Age)
+credit_card_eda$AgeRange <- cut(credit_card_eda$Age, 
+                                                        breaks = c(-Inf, 11, 21, 31, 41, 51, 61, Inf), 
+                                                        labels = c("0-10 Years", "11-20 Years", "21-30 Years", "31-40 Years", "41-50 Years", "51-60 Years", ">60 Years"), 
+                                                        right = FALSE)
+cc_applications_age <- table(credit_card_eda$Performance.Tag, credit_card_eda$AgeRange)
+chisq.test(cc_applications_age)
+#X-squared = 1.5913, df = 4, p-value = 0.8104
