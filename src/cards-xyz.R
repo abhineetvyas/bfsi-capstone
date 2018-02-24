@@ -93,7 +93,9 @@ library(data.table)
 #  be avoided as they major contributors to credit loss.
 
 #----------------------------------------------------
-#  2. Data Understanding
+#  2. Data Understanding - EDA
+#----------------------------------------------------
+# Data Sourcing - Merge the data set
 #----------------------------------------------------
 demographic_data <- read.csv("Demographic data.csv", stringsAsFactors = FALSE)
 credit_bureau_data <- read.csv("Credit Bureau data.csv", stringsAsFactors = FALSE)
@@ -127,17 +129,16 @@ credit_bureau_data <- credit_bureau_data[!is.na(credit_bureau_data$Performance.T
 unique(credit_bureau_data$Performance.Tag)
 
 # Lets see values in No.of.dependents
-unique(demographic_data$No.of.dependents)
+#unique(demographic_data$No.of.dependents)
 # As we see values from 1-5 are available and NA(s) are there so here we are taking assumption 
 # that NA means no dependents available and updating the dataset with 0 instead of NA.
-demographic_data$No.of.dependents[is.na(demographic_data$No.of.dependents)] <- 0
+#demographic_data$No.of.dependents[is.na(demographic_data$No.of.dependents)] <- 0
 
 # Now lets merge the credit burew data with demographic data for all the applications
 credit_card_applications <- merge(x = demographic_data, y = credit_bureau_data, by = "Application.ID", all = TRUE)
-write.csv(credit_card_applications, "credit_card_applications.csv")
 credit_card_applications$Performance.Tag <- credit_card_applications$Performance.Tag.x
 credit_card_applications <- credit_card_applications[ , !(names(credit_card_applications) %in% c("Performance.Tag.x","Performance.Tag.y"))]
-
+write.csv(credit_card_applications, "credit_card_applications.csv")
 summary(credit_card_applications)
 
 #compute correlation matrix of entire data set
@@ -145,43 +146,234 @@ summary(credit_card_applications)
 #round(corr_res, 2)
 
 str(credit_card_applications)
-
-# Perform Exploratory Data Analysis
+#----------------------------------------------------
+# Data Cleaning - Feature understanding and Univeriate analysis
+#----------------------------------------------------
 credit_card_eda <- credit_card_applications
-factor(credit_card_eda$Performance.Tag)
+#factor(credit_card_eda$Performance.Tag)
 credit_card_eda$Performance.Tag <- as.factor(credit_card_eda$Performance.Tag)
 
-# 1. Education
+#1. Application.ID
+# As we know the application id is unique identifier for application of credit card so we can very well remove it.
+credit_card_eda <- credit_card_eda[ , !(names(credit_card_eda) %in% c("Application.ID"))]
+
+#2. Age
+unique(credit_card_eda$Age)
+# as age 0 and -3 are invalid age we can remove these inavid records
+credit_card_eda <- credit_card_eda[!credit_card_eda$Age %in% c(0,-3),]
+summary(credit_card_eda$Age)
+# Age range is 15 to 65 let's categorize the age groups Youth (15-24 years), Adults (25-64 years), Seniors (65 years and over)
+# create same category in dataset
+credit_card_eda$AgeCategory <- cut(credit_card_eda$Age, 
+                                   breaks = c(-Inf, 25, 61, Inf), 
+                                   labels = c("Youth", "Adults", "Seniors"), 
+                                   right = FALSE)
+# We can remove old column
+credit_card_eda <- credit_card_eda[ , !(names(credit_card_eda) %in% c("Age"))]
+# check the distribution
+ggplot(data = credit_card_eda, aes(x=AgeCategory)) + 
+  geom_histogram(stat = "count")
+# looking at the distribution it looks like more CC is distributed to adults
+
+
+#3. Gender
+unique(credit_card_eda$Gender)
+# in dataset some of the genders are empty means it is invalid we can remove invalid data
+credit_card_eda <- credit_card_eda[!credit_card_eda$Gender %in% c(""),]
+ggplot(data = credit_card_eda, aes(x=Gender)) + 
+  geom_histogram(stat = "count")
+# looking at the distribution it looks like more CC is distributed more for Male
+
+#4. Marital.Status..at.the.time.of.application.
+names(credit_card_eda)[2]<-paste("Marital.Status")
+unique(credit_card_eda$Marital.Status)
+# in dataset some of the Marital Status are empty means it is invalid we can remove invalid data
+credit_card_eda <- credit_card_eda[!credit_card_eda$Marital.Status %in% c(""),]
+ggplot(data = credit_card_eda, aes(x=Marital.Status)) + 
+  geom_histogram(stat = "count")
+# looking at the distribution it looks like more CC is distributed more for Married
+
+#5. No.of.dependents
+unique(credit_card_eda$No.of.dependents)
+# in dataset some of the No of dependents are empty means it is invalid we can remove invalid data
+credit_card_eda <- credit_card_eda[!is.na(credit_card_eda$No.of.dependents),]
+ggplot(data = credit_card_eda, aes(x=No.of.dependents)) + 
+  geom_histogram(stat = "count")
+# looking at the distribution it looks like more CC is distributed for 1-3 dependents
+
+#6. Income
+summary(credit_card_eda$Income)
+# in dataset some of the Income are -0.5 and 0 which is invalid we can remove invalid data
+credit_card_eda <- credit_card_eda[!credit_card_eda$Income %in% c(-0.5,0),]
+ggplot(data = credit_card_eda, aes(y=Income, x= Performance.Tag)) + 
+  geom_boxplot()
+credit_card_eda$IncomeRange <- cut(credit_card_eda$Income, 
+                                   breaks = c(-Inf, 16, 31, 45, Inf), 
+                                   labels = c("Low", "Middle", "UpperMiddle", "High"), 
+                                   right = FALSE)
+ggplot(data = credit_card_eda, aes(x=IncomeRange)) + 
+  geom_histogram(stat = "count")
+# looking at the distribution one importent point captured that CC distribution 
+#   is more for Low income range comparision to UpperMiddle
+
+#7. Education
 unique(credit_card_eda$Education)
-credit_card_eda$Education[credit_card_eda$Education==""]<-"Others"
+# in dataset some of the Education are empty means it is invalid we can remove invalid data
+credit_card_eda <- credit_card_eda[!credit_card_eda$Education %in% c(""),]
+ggplot(data = credit_card_eda, aes(x=Education)) + 
+  geom_histogram(stat = "count")
+# looking at the distribution it looks like more CC is distributed less for Phd holders compare to batchlor and Master
+
+#8. Profession
+unique(credit_card_eda$Profession)
+# in dataset some of the Proffession are empty means it is invalid we can remove invalid data
+credit_card_eda <- credit_card_eda[!credit_card_eda$Profession %in% c(""),]
+ggplot(data = credit_card_eda, aes(x=Profession)) + 
+  geom_histogram(stat = "count")
+# looking at the distribution it looks like more CC is distributed more to saliried peoples
+
+#9. Type.of.residence
+unique(credit_card_eda$Type.of.residence)
+# in dataset some of the Type.of.residence are empty means it is invalid we can remove invalid data
+credit_card_eda <- credit_card_eda[!credit_card_eda$Type.of.residence %in% c(""),]
+ggplot(data = credit_card_eda, aes(x=Type.of.residence)) + 
+  geom_histogram(stat = "count")
+# looking at the distribution it looks like more CC is distributed for Renters
+
+#10. No.of.months.in.current.residence
+unique(credit_card_eda$No.of.months.in.current.residence)
+summary(credit_card_eda$No.of.months.in.current.residence)
+credit_card_eda$Residence.Years <- cut(credit_card_eda$No.of.months.in.current.residence, 
+                                   breaks = c(-Inf, 25, 61, Inf), 
+                                   labels = c("< 2 Years", "2-5 Years", "> 5 Years"), 
+                                   right = FALSE)
+ggplot(data = credit_card_eda, aes(x=Residence.Years)) + 
+  geom_histogram(stat = "count")
+# looking at the distribution it looks like more CC is distributed for 
+#   ploples staying at current residents less than 2 years
+
+#11. No.of.months.in.current.company
+unique(credit_card_eda$No.of.months.in.current.company)
+summary(credit_card_eda$No.of.months.in.current.company)
+credit_card_eda$Company.Years <- cut(credit_card_eda$No.of.months.in.current.company, 
+                                       breaks = c(-Inf, 25, 61, Inf), 
+                                       labels = c("< 2 Years", "2-5 Years", "> 5 Years"), 
+                                       right = FALSE)
+ggplot(data = credit_card_eda, aes(x=Company.Years)) + 
+  geom_histogram(stat = "count")
+# looking at the distribution it looks like more CC is distributed for 
+#   ploples working at same company between 2-5 years
+
+#12. No.of.times.90.DPD.or.worse.in.last.6.months
+unique(credit_card_eda$No.of.times.90.DPD.or.worse.in.last.6.months)
+ggplot(data = credit_card_eda, aes(x=No.of.times.90.DPD.or.worse.in.last.6.months)) + 
+  geom_histogram(stat = "count")
+
+#13. No.of.times.60.DPD.or.worse.in.last.6.months
+unique(credit_card_eda$No.of.times.60.DPD.or.worse.in.last.6.months)
+ggplot(data = credit_card_eda, aes(x=No.of.times.60.DPD.or.worse.in.last.6.months)) + 
+  geom_histogram(stat = "count")
+
+#14. No.of.times.30.DPD.or.worse.in.last.6.months
+unique(credit_card_eda$No.of.times.30.DPD.or.worse.in.last.6.months)
+ggplot(data = credit_card_eda, aes(x=No.of.times.30.DPD.or.worse.in.last.6.months)) + 
+  geom_histogram(stat = "count")
+
+#15. No.of.times.90.DPD.or.worse.in.last.12.months
+unique(credit_card_eda$No.of.times.90.DPD.or.worse.in.last.12.months)
+ggplot(data = credit_card_eda, aes(x=No.of.times.90.DPD.or.worse.in.last.12.months)) + 
+  geom_histogram(stat = "count")
+
+#16. No.of.times.60.DPD.or.worse.in.last.12.months
+unique(credit_card_eda$No.of.times.60.DPD.or.worse.in.last.12.months)
+ggplot(data = credit_card_eda, aes(x=No.of.times.60.DPD.or.worse.in.last.12.months)) + 
+  geom_histogram(stat = "count")
+
+#17. No.of.times.30.DPD.or.worse.in.last.12.months
+unique(credit_card_eda$No.of.times.30.DPD.or.worse.in.last.12.months)
+ggplot(data = credit_card_eda, aes(x=No.of.times.30.DPD.or.worse.in.last.12.months)) + 
+  geom_histogram(stat = "count")
+
+#18. Avgas.CC.Utilization.in.last.12.months
+summary(credit_card_eda$Avgas.CC.Utilization.in.last.12.months)
+# 1020 records having NA's it means it requires treatment
+
+#19. No.of.trades.opened.in.last.6.months
+summary(credit_card_eda$No.of.trades.opened.in.last.6.months)
+# 1 Na can be removed
+credit_card_eda <- credit_card_eda[!is.na(credit_card_eda$No.of.trades.opened.in.last.6.months),]
+ggplot(data = credit_card_eda, aes(x=No.of.trades.opened.in.last.6.months)) + 
+  geom_histogram(stat = "count")
+
+#20. No.of.trades.opened.in.last.12.months
+summary(credit_card_eda$No.of.trades.opened.in.last.12.months)
+credit_card_eda <- credit_card_eda[!is.na(credit_card_eda$No.of.trades.opened.in.last.6.months),]
+ggplot(data = credit_card_eda, aes(x=No.of.trades.opened.in.last.12.months)) + 
+  geom_histogram(stat = "count")
+
+#21. No.of.PL.trades.opened.in.last.6.months
+summary(credit_card_eda$No.of.PL.trades.opened.in.last.6.months)
+ggplot(data = credit_card_eda, aes(x=No.of.PL.trades.opened.in.last.6.months)) + 
+  geom_histogram(stat = "count")
+
+#22. No.of.PL.trades.opened.in.last.12.months
+unique(credit_card_eda$No.of.PL.trades.opened.in.last.12.months)
+ggplot(data = credit_card_eda, aes(x=No.of.PL.trades.opened.in.last.12.months)) + 
+  geom_histogram(stat = "count")
+
+#23. No.of.Inquiries.in.last.6.months..excluding.home...auto.loans.
+unique(credit_card_eda$No.of.Inquiries.in.last.6.months..excluding.home...auto.loans.)
+ggplot(data = credit_card_eda, aes(x=No.of.Inquiries.in.last.6.months..excluding.home...auto.loans.)) + 
+  geom_histogram(stat = "count")
+
+#24. No.of.Inquiries.in.last.12.months..excluding.home...auto.loans.
+unique(credit_card_eda$No.of.Inquiries.in.last.12.months..excluding.home...auto.loans.)
+ggplot(data = credit_card_eda, aes(x=No.of.Inquiries.in.last.12.months..excluding.home...auto.loans.)) + 
+  geom_histogram(stat = "count")
+
+#25. Presence.of.open.home.loan
+unique(credit_card_eda$Presence.of.open.home.loan)
+credit_card_eda <- credit_card_eda[!is.na(credit_card_eda$Presence.of.open.home.loan),]
+ggplot(data = credit_card_eda, aes(x=Presence.of.open.home.loan)) + 
+  geom_histogram(stat = "count")
+
+#26. Outstanding.Balance
+summary(credit_card_eda$Outstanding.Balance)
+ggplot(data = credit_card_eda, aes(y=Outstanding.Balance, x= Performance.Tag)) + 
+  geom_boxplot()
+
+#27. Total.No.of.Trades
+summary(credit_card_eda$Total.No.of.Trades)
+ggplot(data = credit_card_eda, aes(x=Total.No.of.Trades)) + 
+  geom_histogram(stat = "count")
+
+#28. Presence.of.open.auto.loan
+unique(credit_card_eda$Presence.of.open.auto.loan)
+ggplot(data = credit_card_eda, aes(x=Presence.of.open.auto.loan)) + 
+  geom_histogram(stat = "count")
+#--------------------------------------------------
+# Bivariate Analysis
+#--------------------------------------------------
+
 plot_grid(ggplot(data = credit_card_eda, aes(x=Education, fill = Performance.Tag)) + 
   geom_bar(stat = "count", position = "dodge"),
-# As it is difficult to evaluate, lets  plot on scale of one 
 ggplot(credit_card_eda, aes(Education, fill = Performance.Tag)) + 
   geom_bar(position = "fill", stat = "count") )
 # By looking at plot no pattern is found so, Education may not be an important predictor.
 
-# 2. Gender
-unique(credit_card_eda$Gender)
-credit_card_eda$Gender[credit_card_eda$Gender==""]<-"O"
+
 plot_grid(ggplot(data = credit_card_eda, aes(x=Gender, fill = Performance.Tag)) + 
   geom_bar(stat = "count"),
 ggplot(credit_card_eda, aes(Gender, fill = Performance.Tag)) + 
   geom_bar(position = "fill", stat = "count") )
 # By looking at plot no pattern is found so, Gender may not be an important predictor.
 
-# 3. Marital status
-unique(credit_card_eda$Marital.Status..at.the.time.of.application.)
-credit_card_eda$Marital.Status..at.the.time.of.application.[credit_card_eda$Marital.Status..at.the.time.of.application.==""]<-"O"
-plot_grid(ggplot(data = credit_card_eda, aes(x=Marital.Status..at.the.time.of.application., fill = Performance.Tag)) + 
+plot_grid(ggplot(data = credit_card_eda, aes(x=Marital.Status, fill = Performance.Tag)) + 
   geom_bar(stat = "count"),
-ggplot(credit_card_eda, aes(Marital.Status..at.the.time.of.application., fill = Performance.Tag)) + 
+ggplot(credit_card_eda, aes(Marital.Status, fill = Performance.Tag)) + 
   geom_bar(position = "fill", stat = "count"))
 # By looking at plot no pattern is found so, Marital status may not be an important predictor.
 
-# 4. Profession
-unique(credit_card_eda$Profession)
-credit_card_eda$Profession[credit_card_eda$Profession==""]<-"Other"
 plot_grid(ggplot(data = credit_card_eda, aes(x=Profession, fill = Performance.Tag)) + 
   geom_bar(stat = "count"),
 ggplot(credit_card_eda, aes(Profession, fill = Performance.Tag)) + 
@@ -189,124 +381,49 @@ ggplot(credit_card_eda, aes(Profession, fill = Performance.Tag)) +
   )
 # By looking at plot no pattern is found so, Profession may not be an important predictor.
 
-# 5. ResidenceType
-unique(credit_card_eda$Type.of.residence)
-credit_card_eda$Type.of.residence[credit_card_eda$Type.of.residence==""]<-"Others"
 plot_grid(ggplot(data = credit_card_eda, aes(x=Type.of.residence, fill = Performance.Tag)) + 
   geom_bar(stat = "count"),
 ggplot(credit_card_eda, aes(Type.of.residence, fill = Performance.Tag)) + 
   geom_bar(position = "fill", stat = "count"))
 # By looking at plot no pattern is found so, ResidenceType may not be an important predictor.
 
-# 6. Number of dependents
-unique(credit_card_eda$No.of.dependents)
 plot_grid(ggplot(data = credit_card_eda, aes(x=No.of.dependents, fill = Performance.Tag)) + 
   geom_bar(stat = "count"),
 ggplot(credit_card_eda, aes(No.of.dependents, fill = Performance.Tag)) + 
   geom_bar(position = "fill", stat = "count"))
 # By looking at plot no pattern is found so, No.of.dependents may not be an important predictor.
 
-# 7. Number of month in current residence
-credit_card_eda$No.of.Years.in.current.residence <- cut(credit_card_eda$No.of.months.in.current.residence, 
-                       breaks = c(-Inf, 37, 73, 109, Inf), 
-                       labels = c("0-3 Years", "4-6 Years", "7-9 Years", ">10 Years"), 
-                       right = FALSE)
-plot_grid(ggplot(data = credit_card_eda, aes(x=No.of.Years.in.current.residence, fill = Performance.Tag)) + 
+plot_grid(ggplot(data = credit_card_eda, aes(x=Residence.Years, fill = Performance.Tag)) + 
   geom_bar(stat = "count"),
-  ggplot(credit_card_eda, aes(No.of.Years.in.current.residence, fill = Performance.Tag)) + 
+  ggplot(credit_card_eda, aes(Residence.Years, fill = Performance.Tag)) + 
     geom_bar(position = "fill", stat = "count"))
 # By looking at plot No.of.Years.in.current.residence may be an important predictor.
 
 
-# 8. Number of month in current company
-credit_card_eda$No.of.Years.in.current.company <- cut(credit_card_eda$No.of.months.in.current.company, 
-                                                                 breaks = c(-Inf, 13, 25, 37, 49, 61, 73, Inf), 
-                                                                 labels = c("0-1 Years", "1-2 Years", "2-3 Years", "3-4 Years", "4-5 Years"
-                                                                            , "5-6 Years", ">6 Years"), 
-                                                                 right = FALSE)
-plot_grid(ggplot(data = credit_card_eda, aes(x=No.of.Years.in.current.company, fill = Performance.Tag)) + 
+plot_grid(ggplot(data = credit_card_eda, aes(x=Company.Years, fill = Performance.Tag)) + 
   geom_bar(stat = "count"),
-ggplot(credit_card_eda, aes(No.of.Years.in.current.company, fill = Performance.Tag)) + 
+ggplot(credit_card_eda, aes(Company.Years, fill = Performance.Tag)) + 
     geom_bar(position = "fill", stat = "count"))
 # By looking at plot No.of.Years.in.current.company may be an important predictor.
 
-# 9. Income
-credit_card_eda$IncomeRange <- cut(credit_card_eda$Income, 
-                                                               breaks = c(-Inf, 16, 31, 46, Inf), 
-                                                               labels = c("0-15", "16-30","31-45", "45-60"), 
-                                                               right = FALSE)
 plot_grid(ggplot(data = credit_card_eda, aes(x=IncomeRange, fill = Performance.Tag)) + 
   geom_bar(stat = "count"),
 ggplot(credit_card_eda, aes(IncomeRange, fill = Performance.Tag)) + 
     geom_bar(position = "fill", stat = "count"))
 # By looking at plot Income may be an important predictor.
 
-# 10.  No.of.times.30.DPD.or.worse.in.last.6.months
-unique(credit_card_eda$No.of.times.30.DPD.or.worse.in.last.6.months)
-credit_card_eda_30DPD_grp <- group_by(credit_card_eda, No.of.times.30.DPD.or.worse.in.last.6.months,Performance.Tag)
-credit_card_eda_30DPD_6 <-  summarise(credit_card_eda_30DPD_grp,AvgOutstanding = mean(Outstanding.Balance))
-plot_grid(
-ggplot(data = credit_card_eda_30DPD_6, aes(x=No.of.times.30.DPD.or.worse.in.last.6.months,
-                                         y = AvgOutstanding, fill = Performance.Tag,
-                                         col = Performance.Tag)) + geom_line(size = 1.5),
-ggplot(data = credit_card_eda, aes(x=No.of.times.30.DPD.or.worse.in.last.6.months, fill = Performance.Tag)) + 
-  geom_bar(stat = "count", position = "dodge"))
-
-# 11.  No.of.times.60.DPD.or.worse.in.last.6.months
-unique(credit_card_eda$No.of.times.60.DPD.or.worse.in.last.6.months)
-credit_card_eda_60DPD_grp <- group_by(credit_card_eda, No.of.times.60.DPD.or.worse.in.last.6.months,Performance.Tag)
-credit_card_eda_60DPD_6 <-  summarise(credit_card_eda_60DPD_grp,AvgOutstanding = mean(Outstanding.Balance))
-plot_grid(
-  ggplot(data = credit_card_eda_60DPD_6, aes(x=No.of.times.60.DPD.or.worse.in.last.6.months,
-                                           y = AvgOutstanding, fill = Performance.Tag,
-                                           col = Performance.Tag)) + geom_line(size = 1.5),
-  ggplot(data = credit_card_eda, aes(x=No.of.times.60.DPD.or.worse.in.last.6.months, fill = Performance.Tag)) + 
-    geom_bar(stat = "count", position = "dodge"))
-
-# 12.  No.of.times.90.DPD.or.worse.in.last.6.months
-unique(credit_card_eda$No.of.times.90.DPD.or.worse.in.last.6.months)
-credit_card_eda_90DPD_grp <- group_by(credit_card_eda, No.of.times.90.DPD.or.worse.in.last.6.months,Performance.Tag)
-credit_card_eda_90DPD_6 <-  summarise(credit_card_eda_90DPD_grp,AvgOutstanding = mean(Outstanding.Balance))
-plot_grid(
-  ggplot(data = credit_card_eda_90DPD_6, aes(x=No.of.times.90.DPD.or.worse.in.last.6.months,
-                                           y = AvgOutstanding, fill = Performance.Tag,
-                                           col = Performance.Tag)) + geom_line(size = 1.5),
-  ggplot(data = credit_card_eda, aes(x=No.of.times.90.DPD.or.worse.in.last.6.months, fill = Performance.Tag)) + 
-    geom_bar(stat = "count", position = "dodge"))  
-
-# 13.  No.of.times.30.DPD.or.worse.in.last.12.months
-unique(credit_card_eda$No.of.times.30.DPD.or.worse.in.last.12.months)
-credit_card_eda_30DPD_grp <- group_by(credit_card_eda, No.of.times.30.DPD.or.worse.in.last.12.months,Performance.Tag)
-credit_card_eda_30DPD_12 <-  summarise(credit_card_eda_30DPD_grp,AvgOutstanding = mean(Outstanding.Balance))
-plot_grid(
-  ggplot(data = credit_card_eda_30DPD_12, aes(x=No.of.times.30.DPD.or.worse.in.last.12.months,
-                                           y = AvgOutstanding, fill = Performance.Tag,
-                                           col = Performance.Tag)) + geom_line(size = 1.5),
-  ggplot(data = credit_card_eda, aes(x=No.of.times.30.DPD.or.worse.in.last.12.months, fill = Performance.Tag)) + 
-    geom_bar(stat = "count", position = "dodge"))
-
-# 14.  No.of.times.60.DPD.or.worse.in.last.12.months
-unique(credit_card_eda$No.of.times.60.DPD.or.worse.in.last.12.months)
-credit_card_eda_60DPD_grp <- group_by(credit_card_eda, No.of.times.60.DPD.or.worse.in.last.12.months,Performance.Tag)
-credit_card_eda_60DPD_12 <-  summarise(credit_card_eda_60DPD_grp,AvgOutstanding = mean(Outstanding.Balance))
-plot_grid(
-  ggplot(data = credit_card_eda_60DPD_12, aes(x=No.of.times.60.DPD.or.worse.in.last.12.months,
-                                           y = AvgOutstanding, fill = Performance.Tag,
-                                           col = Performance.Tag)) + geom_line(size = 1.5),
-  ggplot(data = credit_card_eda, aes(x=No.of.times.60.DPD.or.worse.in.last.12.months, fill = Performance.Tag)) + 
-    geom_bar(stat = "count", position = "dodge"))
-
-# 15.  No.of.times.90.DPD.or.worse.in.last.12.months
-unique(credit_card_eda$No.of.times.90.DPD.or.worse.in.last.12.months)
-credit_card_eda_90DPD_grp <- group_by(credit_card_eda, No.of.times.90.DPD.or.worse.in.last.12.months,Performance.Tag)
-credit_card_eda_90DPD_12 <-  summarise(credit_card_eda_90DPD_grp,AvgOutstanding = mean(Outstanding.Balance))
-plot_grid(
-  ggplot(data = credit_card_eda_90DPD_12, aes(x=No.of.times.90.DPD.or.worse.in.last.12.months,
-                                           y = AvgOutstanding, fill = Performance.Tag,
-                                           col = Performance.Tag)) + geom_line(size = 1.5),
-  ggplot(data = credit_card_eda, aes(x=No.of.times.90.DPD.or.worse.in.last.12.months, fill = Performance.Tag)) + 
-    geom_bar(stat = "count", position = "dodge"))
-
+credit_card_eda_30DPD_grp_6 <- group_by(credit_card_eda, No.of.times.30.DPD.or.worse.in.last.6.months,Performance.Tag)
+credit_card_eda_30DPD_6 <-  summarise(credit_card_eda_30DPD_grp_6,AvgOutstanding = mean(Outstanding.Balance))
+credit_card_eda_60DPD_grp_6 <- group_by(credit_card_eda, No.of.times.60.DPD.or.worse.in.last.6.months,Performance.Tag)
+credit_card_eda_60DPD_6 <-  summarise(credit_card_eda_60DPD_grp_6,AvgOutstanding = mean(Outstanding.Balance))
+credit_card_eda_90DPD_grp_6 <- group_by(credit_card_eda, No.of.times.90.DPD.or.worse.in.last.6.months,Performance.Tag)
+credit_card_eda_90DPD_6 <-  summarise(credit_card_eda_90DPD_grp_6,AvgOutstanding = mean(Outstanding.Balance))
+credit_card_eda_30DPD_grp_12 <- group_by(credit_card_eda, No.of.times.30.DPD.or.worse.in.last.12.months,Performance.Tag)
+credit_card_eda_30DPD_12 <-  summarise(credit_card_eda_30DPD_grp_12,AvgOutstanding = mean(Outstanding.Balance))
+credit_card_eda_60DPD_grp_12 <- group_by(credit_card_eda, No.of.times.60.DPD.or.worse.in.last.12.months,Performance.Tag)
+credit_card_eda_60DPD_12 <-  summarise(credit_card_eda_60DPD_grp_12,AvgOutstanding = mean(Outstanding.Balance))
+credit_card_eda_90DPD_grp_12 <- group_by(credit_card_eda, No.of.times.90.DPD.or.worse.in.last.12.months,Performance.Tag)
+credit_card_eda_90DPD_12 <-  summarise(credit_card_eda_90DPD_grp_12,AvgOutstanding = mean(Outstanding.Balance))
 
 plot_grid(
   ggplot(data = credit_card_eda_30DPD_6, aes(x=No.of.times.30.DPD.or.worse.in.last.6.months,
@@ -334,18 +451,42 @@ plot_grid(
                                            col = Performance.Tag)) + geom_line(size = 1.5)
 )
 
-#16 Avgas CC Utilization in last 12 months
-summary(credit_card_eda$Avgas.CC.Utilization.in.last.12.months)
-credit_card_eda_AvgCU_grp <- group_by(credit_card_eda, IncomeRange,Performance.Tag)
-credit_card_eda_AvgCU <-  summarise(credit_card_eda_AvgCU_grp,AvgCreditUtilization = mean(Avgas.CC.Utilization.in.last.12.months))
 
-ggplot(data = credit_card_eda_AvgCU, aes(x=IncomeRange,
-                                         y = AvgCreditUtilization, fill = Performance.Tag,
-                                         col = Performance.Tag)) + geom_bar(position = "dodge")
+credit_card_eda_30DPD_6 <-  summarise(credit_card_eda_30DPD_grp_6,AvgIncome = mean(Income))
+credit_card_eda_60DPD_6 <-  summarise(credit_card_eda_60DPD_grp_6,AvgIncome = mean(Income))
+credit_card_eda_90DPD_6 <-  summarise(credit_card_eda_90DPD_grp_6,AvgIncome = mean(Income))
+credit_card_eda_30DPD_12 <-  summarise(credit_card_eda_30DPD_grp_12,AvgIncome = mean(Income))
+credit_card_eda_60DPD_12 <-  summarise(credit_card_eda_60DPD_grp_12,AvgIncome = mean(Income))
+credit_card_eda_90DPD_12 <-  summarise(credit_card_eda_90DPD_grp_12,AvgIncome = mean(Income))
 
-#Avgas CC Utilization in last 12 months
-unique(credit_card_eda$Avgas.CC.Utilization.in.last.12.months)
+plot_grid(
+  ggplot(data = credit_card_eda_30DPD_6, aes(x=No.of.times.30.DPD.or.worse.in.last.6.months,
+                                             y = AvgIncome, fill = Performance.Tag,
+                                             col = Performance.Tag)) + geom_line(size = 1.5),
+  
+  ggplot(data = credit_card_eda_60DPD_6, aes(x=No.of.times.60.DPD.or.worse.in.last.6.months,
+                                             y = AvgIncome, fill = Performance.Tag,
+                                             col = Performance.Tag)) + geom_line(size = 1.5),
+  
+  ggplot(data = credit_card_eda_90DPD_6, aes(x=No.of.times.90.DPD.or.worse.in.last.6.months,
+                                             y = AvgIncome, fill = Performance.Tag,
+                                             col = Performance.Tag)) + geom_line(size = 1.5),
+  
+  ggplot(data = credit_card_eda_30DPD_12, aes(x=No.of.times.30.DPD.or.worse.in.last.12.months,
+                                              y = AvgIncome, fill = Performance.Tag,
+                                              col = Performance.Tag)) + geom_line(size = 1.5),
+  
+  ggplot(data = credit_card_eda_60DPD_12, aes(x=No.of.times.60.DPD.or.worse.in.last.12.months,
+                                              y = AvgIncome, fill = Performance.Tag,
+                                              col = Performance.Tag)) + geom_line(size = 1.5),
+  
+  ggplot(data = credit_card_eda_90DPD_12, aes(x=No.of.times.90.DPD.or.worse.in.last.12.months,
+                                              y = AvgIncome, fill = Performance.Tag,
+                                              col = Performance.Tag)) + geom_line(size = 1.5)
+)
 
+#----------------------------------------------------------------------------------
+#IMP - Yet to merge
 #----------------------------------------------------------------------------------
 
 box_theme<- theme(axis.line=element_blank(),axis.title=element_blank(), 
