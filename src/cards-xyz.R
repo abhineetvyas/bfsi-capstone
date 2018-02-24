@@ -213,7 +213,7 @@ credit_card_eda$IncomeRange <- cut(credit_card_eda$Income,
                                    right = FALSE)
 ggplot(data = credit_card_eda, aes(x=IncomeRange)) + 
   geom_histogram(stat = "count")
-# looking at the distribution one importent point captured that CC distribution 
+# looking at the distribution one important point captured is that CC distribution 
 #   is more for Low income range comparision to UpperMiddle
 
 #7. Education
@@ -223,14 +223,14 @@ credit_card_eda <- credit_card_eda[!credit_card_eda$Education %in% c(""),]
 ggplot(data = credit_card_eda, aes(x=Education)) + 
   geom_histogram(stat = "count")
 # looking at the distribution it looks like more CC is distributed less for Phd holders compare to batchlor and Master
-
+# also cc is dirtibuted more toward professionals.
 #8. Profession
 unique(credit_card_eda$Profession)
 # in dataset some of the Proffession are empty means it is invalid we can remove invalid data
 credit_card_eda <- credit_card_eda[!credit_card_eda$Profession %in% c(""),]
 ggplot(data = credit_card_eda, aes(x=Profession)) + 
   geom_histogram(stat = "count")
-# looking at the distribution it looks like more CC is distributed more to saliried peoples
+# looking at the distribution it looks like more CC is distributed more to salaried people.
 
 #9. Type.of.residence
 unique(credit_card_eda$Type.of.residence)
@@ -238,7 +238,7 @@ unique(credit_card_eda$Type.of.residence)
 credit_card_eda <- credit_card_eda[!credit_card_eda$Type.of.residence %in% c(""),]
 ggplot(data = credit_card_eda, aes(x=Type.of.residence)) + 
   geom_histogram(stat = "count")
-# looking at the distribution it looks like more CC is distributed for Renters
+# looking at the distribution it looks like more CC is distributed for people having rented accomodation.
 
 #10. No.of.months.in.current.residence
 unique(credit_card_eda$No.of.months.in.current.residence)
@@ -250,7 +250,7 @@ credit_card_eda$Residence.Years <- cut(credit_card_eda$No.of.months.in.current.r
 ggplot(data = credit_card_eda, aes(x=Residence.Years)) + 
   geom_histogram(stat = "count")
 # looking at the distribution it looks like more CC is distributed for 
-#   ploples staying at current residents less than 2 years
+#   people staying at current residents less than 2 years
 
 #11. No.of.months.in.current.company
 unique(credit_card_eda$No.of.months.in.current.company)
@@ -297,6 +297,7 @@ ggplot(data = credit_card_eda, aes(x=No.of.times.30.DPD.or.worse.in.last.12.mont
 #18. Avgas.CC.Utilization.in.last.12.months
 summary(credit_card_eda$Avgas.CC.Utilization.in.last.12.months)
 # 1020 records having NA's it means it requires treatment
+# for these cases replacing the same with median value or WOE Value 
 
 #19. No.of.trades.opened.in.last.6.months
 summary(credit_card_eda$No.of.trades.opened.in.last.6.months)
@@ -326,6 +327,7 @@ unique(credit_card_eda$No.of.Inquiries.in.last.6.months..excluding.home...auto.l
 ggplot(data = credit_card_eda, aes(x=No.of.Inquiries.in.last.6.months..excluding.home...auto.loans.)) + 
   geom_histogram(stat = "count")
 
+
 #24. No.of.Inquiries.in.last.12.months..excluding.home...auto.loans.
 unique(credit_card_eda$No.of.Inquiries.in.last.12.months..excluding.home...auto.loans.)
 ggplot(data = credit_card_eda, aes(x=No.of.Inquiries.in.last.12.months..excluding.home...auto.loans.)) + 
@@ -341,6 +343,7 @@ ggplot(data = credit_card_eda, aes(x=Presence.of.open.home.loan)) +
 summary(credit_card_eda$Outstanding.Balance)
 ggplot(data = credit_card_eda, aes(y=Outstanding.Balance, x= Performance.Tag)) + 
   geom_boxplot()
+## Looks  like people with higher outstanding balance are more of defaulters.
 
 #27. Total.No.of.Trades
 summary(credit_card_eda$Total.No.of.Trades)
