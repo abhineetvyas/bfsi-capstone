@@ -224,6 +224,7 @@ ggplot(data = credit_card_eda, aes(x=Education)) +
   geom_histogram(stat = "count")
 # looking at the distribution it looks like more CC is distributed less for Phd holders compare to batchlor and Master
 # also cc is dirtibuted more toward professionals.
+
 #8. Profession
 unique(credit_card_eda$Profession)
 # in dataset some of the Proffession are empty means it is invalid we can remove invalid data
