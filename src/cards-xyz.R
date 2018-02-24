@@ -296,8 +296,21 @@ ggplot(data = credit_card_eda, aes(x=No.of.times.30.DPD.or.worse.in.last.12.mont
 
 #18. Avgas.CC.Utilization.in.last.12.months
 summary(credit_card_eda$Avgas.CC.Utilization.in.last.12.months)
+
 # 1020 records having NA's it means it requires treatment
 # for these cases replacing the same with median value or WOE Value 
+credit_card_eda[is.na(credit_card_eda$Avgas.CC.Utilization.in.last.12.months),]$Avgas.CC.Utilization.in.last.12.months <- 30
+x_Avgas.CC.Utilization.in.last.12.months <- credit_card_eda$Avgas.CC.Utilization.in.last.12.months
+qnt <- quantile(x_Avgas.CC.Utilization.in.last.12.months, probs=c(.25, .75), na.rm = T)
+caps <- quantile(x_Avgas.CC.Utilization.in.last.12.months, probs=c(.05, .95), na.rm = T)
+H <- 1.5 * IQR(x_Avgas.CC.Utilization.in.last.12.months, na.rm = T)
+x_Avgas.CC.Utilization.in.last.12.months[x_Avgas.CC.Utilization.in.last.12.months < (qnt[1] - H)] <- caps[1]
+x_Avgas.CC.Utilization.in.last.12.months[x_Avgas.CC.Utilization.in.last.12.months > (qnt[2] + H)] <- caps[2]
+credit_card_eda$x_Avgas.CC.Utilization.in.last.12.months <- x_Avgas.CC.Utilization.in.last.12.months
+summary(credit_card_eda$Avgas.CC.Utilization.in.last.12.months)
+ggplot(data = credit_card_eda, aes(y=Avgas.CC.Utilization.in.last.12.months, x= Performance.Tag)) + 
+  geom_boxplot()
+# Avgas.CC.Utilization.in.last.12.months looks strong predictor for the performance tag 
 
 #19. No.of.trades.opened.in.last.6.months
 summary(credit_card_eda$No.of.trades.opened.in.last.6.months)
@@ -354,6 +367,7 @@ ggplot(data = credit_card_eda, aes(x=Total.No.of.Trades)) +
 unique(credit_card_eda$Presence.of.open.auto.loan)
 ggplot(data = credit_card_eda, aes(x=Presence.of.open.auto.loan)) + 
   geom_histogram(stat = "count")
+
 #--------------------------------------------------
 # Bivariate Analysis
 #--------------------------------------------------
@@ -414,6 +428,60 @@ plot_grid(ggplot(data = credit_card_eda, aes(x=IncomeRange, fill = Performance.T
 ggplot(credit_card_eda, aes(IncomeRange, fill = Performance.Tag)) + 
     geom_bar(position = "fill", stat = "count"))
 # By looking at plot Income may be an important predictor.
+
+plot_grid(ggplot(data = credit_card_eda, aes(x=No.of.trades.opened.in.last.6.months, fill = Performance.Tag)) + 
+            geom_bar(stat = "count"),
+          ggplot(credit_card_eda, aes(No.of.trades.opened.in.last.6.months, fill = Performance.Tag)) + 
+            geom_bar(position = "fill", stat = "count"))
+# By looking at plot No.of.trades.opened.in.last.6.months may be an important predictor.
+
+plot_grid(ggplot(data = credit_card_eda, aes(x=No.of.trades.opened.in.last.12.months, fill = Performance.Tag)) + 
+            geom_bar(stat = "count"),
+          ggplot(credit_card_eda, aes(No.of.trades.opened.in.last.12.months, fill = Performance.Tag)) + 
+            geom_bar(position = "fill", stat = "count"))
+# By looking at plot No.of.trades.opened.in.last.12.months may be an important predictor.
+
+plot_grid(ggplot(data = credit_card_eda, aes(x=No.of.PL.trades.opened.in.last.6.months, fill = Performance.Tag)) + 
+            geom_bar(stat = "count"),
+          ggplot(credit_card_eda, aes(No.of.PL.trades.opened.in.last.6.months, fill = Performance.Tag)) + 
+            geom_bar(position = "fill", stat = "count"))
+# By looking at plot No.of.PL.trades.opened.in.last.6.months may be an important predictor.
+
+plot_grid(ggplot(data = credit_card_eda, aes(x=No.of.PL.trades.opened.in.last.12.months, fill = Performance.Tag)) + 
+            geom_bar(stat = "count"),
+          ggplot(credit_card_eda, aes(No.of.PL.trades.opened.in.last.12.months, fill = Performance.Tag)) + 
+            geom_bar(position = "fill", stat = "count"))
+# By looking at plot No.of.PL.trades.opened.in.last.12.months may be an important predictor.
+
+plot_grid(ggplot(data = credit_card_eda, aes(x=No.of.Inquiries.in.last.6.months..excluding.home...auto.loans., fill = Performance.Tag)) + 
+            geom_bar(stat = "count"),
+          ggplot(credit_card_eda, aes(No.of.Inquiries.in.last.6.months..excluding.home...auto.loans., fill = Performance.Tag)) + 
+            geom_bar(position = "fill", stat = "count"))
+# By looking at plot No.of.Inquiries.in.last.6.months..excluding.home...auto.loans. may be an important predictor.
+
+plot_grid(ggplot(data = credit_card_eda, aes(x=No.of.Inquiries.in.last.12.months..excluding.home...auto.loans., fill = Performance.Tag)) + 
+            geom_bar(stat = "count"),
+          ggplot(credit_card_eda, aes(No.of.Inquiries.in.last.12.months..excluding.home...auto.loans., fill = Performance.Tag)) + 
+            geom_bar(position = "fill", stat = "count"))
+# By looking at plot No.of.Inquiries.in.last.12.months..excluding.home...auto.loans. may be an important predictor.
+
+plot_grid(ggplot(data = credit_card_eda, aes(x=Presence.of.open.home.loan, fill = Performance.Tag)) + 
+            geom_bar(stat = "count"),
+          ggplot(credit_card_eda, aes(Presence.of.open.home.loan, fill = Performance.Tag)) + 
+            geom_bar(position = "fill", stat = "count"))
+# By looking at plot Presence.of.open.home.loan may be an important predictor.
+
+plot_grid(ggplot(data = credit_card_eda, aes(x=Total.No.of.Trades, fill = Performance.Tag)) + 
+            geom_bar(stat = "count"),
+          ggplot(credit_card_eda, aes(Total.No.of.Trades, fill = Performance.Tag)) + 
+            geom_bar(position = "fill", stat = "count"))
+# By looking at plot Total.No.of.Trades may be an important predictor.
+
+plot_grid(ggplot(data = credit_card_eda, aes(x=Presence.of.open.auto.loan, fill = Performance.Tag)) + 
+            geom_bar(stat = "count"),
+          ggplot(credit_card_eda, aes(Presence.of.open.auto.loan, fill = Performance.Tag)) + 
+            geom_bar(position = "fill", stat = "count"))
+# By looking at plot Presence.of.open.auto.loan may be an important predictor.
 
 credit_card_eda_30DPD_grp_6 <- group_by(credit_card_eda, No.of.times.30.DPD.or.worse.in.last.6.months,Performance.Tag)
 credit_card_eda_30DPD_6 <-  summarise(credit_card_eda_30DPD_grp_6,AvgOutstanding = mean(Outstanding.Balance))
