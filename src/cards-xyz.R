@@ -719,105 +719,6 @@ credit_card_applications_numerical_var <- credit_card_applications[,continuous_v
 
 
 
-#Feature selection
-#------------------
-#Chi square test to do the feature selection for categorical variables
-str(credit_card_applications_categorical_var)
-credit_card_applications_categorical_var %<>%
-  mutate_each_(funs(factor(.)),categorical_variables)
-str(credit_card_applications_categorical_var)
-#Gender - check if it is significant based on p value from chi square test
-table(credit_card_applications_categorical_var$Gender, credit_card_applications_categorical_var$Performance.Tag.x)
-chisq.test(credit_card_applications_categorical_var$Gender, credit_card_applications_categorical_var$Performance.Tag.x, correct=FALSE)
-#since p-value = 0.6113 > 0.05, we accept the null hypothesis that the variable Gender is insignificant 
-
-#Marital.Status..at.the.time.of.application. - check if it is significant based on p value from chi square test
-table(credit_card_applications_categorical_var$Marital.Status..at.the.time.of.application., credit_card_applications_categorical_var$Performance.Tag.x)
-chisq.test(credit_card_applications_categorical_var$Marital.Status..at.the.time.of.application., credit_card_applications_categorical_var$Performance.Tag.x, correct=FALSE)
-#since p-value = 0.7715 > 0.05, we accept the null hypothesis that the variable Marital.Status is insignificant
-
-#No.of.dependents - check if it is significant based on p value from chi square test
-table(credit_card_applications_categorical_var$No.of.dependents, credit_card_applications_categorical_var$Performance.Tag.x)
-chisq.test(credit_card_applications_categorical_var$No.of.dependents, credit_card_applications_categorical_var$Performance.Tag.x, correct=FALSE)
-#since p-value = 0.1826 > 0.05, we accept the null hypothesis that the variable No.of.dependents is insignificant 
-
-#Education - check if it is significant based on p value from chi square test
-table(credit_card_applications_categorical_var$Education, credit_card_applications_categorical_var$Performance.Tag.x)
-chisq.test(credit_card_applications_categorical_var$Education, credit_card_applications_categorical_var$Performance.Tag.x, correct=FALSE)
-#since p-value = 0.8104 > 0.05, we accept the null hypothesis that the variable Education is insignificant 
-
-#Profession - check if it is significant based on p value from chi square test
-table(credit_card_applications_categorical_var$Profession, credit_card_applications_categorical_var$Performance.Tag.x)
-chisq.test(credit_card_applications_categorical_var$Profession, credit_card_applications_categorical_var$Performance.Tag.x, correct=FALSE)
-#since p-value = 0.06038 > 0.05, we accept the null hypothesis that the variable Profession is insignificant 
-
-#Type.of.residence - check if it is significant based on p value from chi square test
-table(credit_card_applications_categorical_var$Type.of.residence, credit_card_applications_categorical_var$Performance.Tag.x)
-chisq.test(credit_card_applications_categorical_var$Type.of.residence, credit_card_applications_categorical_var$Performance.Tag.x, correct=FALSE)
-#since p-value = p-value = 0.7655 > 0.05 , we accept the null hypothesis that the variable Type.of.residence is insignificant 
-
-#Presence.of.open.home.loan - check if it is significant based on p value from chi square test
-table(credit_card_applications_categorical_var$Presence.of.open.home.loan, credit_card_applications_categorical_var$Performance.Tag.x)
-chisq.test(credit_card_applications_categorical_var$Presence.of.open.home.loan, credit_card_applications_categorical_var$Performance.Tag.x, correct=FALSE)
-#since p-value = 1.716e-11 < 0.05, we reject the null hypothesis and conclude that variable  'Presence.of.open.home.loan' is significant 
-
-#Presence.of.open.auto.loan - check if it is significant based on p value from chi square test
-table(credit_card_applications_categorical_var$Presence.of.open.auto.loan, credit_card_applications_categorical_var$Performance.Tag.x)
-chisq.test(credit_card_applications_categorical_var$Presence.of.open.auto.loan, credit_card_applications_categorical_var$Performance.Tag.x, correct=FALSE)
-#since p-value = 0.03454 < 0.05, we reject the null hypothesis and conclude that variable  'Presence.of.open.auto.loan' is significant 
-
-#No.of.times.90.DPD.or.worse.in.last.6.months - check if it is significant based on p value from chi square test
-table(credit_card_applications_categorical_var$No.of.times.90.DPD.or.worse.in.last.6.months, credit_card_applications_categorical_var$Performance.Tag.x)
-chisq.test(credit_card_applications_categorical_var$No.of.times.90.DPD.or.worse.in.last.6.months, credit_card_applications_categorical_var$Performance.Tag.x, correct=FALSE)
-#since p-value = p-value < 2.2e-16, we reject the null hypothesis and conclude that variable  'No.of.times.90.DPD.or.worse.in.last.6.months' is significant 
-
-
-#No.of.times.90.DPD.or.worse.in.last.12.months - check if it is significant based on p value from chi square test
-table(credit_card_applications_categorical_var$No.of.times.90.DPD.or.worse.in.last.12.months, credit_card_applications_categorical_var$Performance.Tag.x)
-chisq.test(credit_card_applications_categorical_var$No.of.times.90.DPD.or.worse.in.last.12.months, credit_card_applications_categorical_var$Performance.Tag.x, correct=FALSE)
-#since p-value = p-value < 2.2e-16, we reject the null hypothesis and conclude that variable  'No.of.times.90.DPD.or.worse.in.last.12.months' is significant 
-
-#No.of.times.60.DPD.or.worse.in.last.6.months - check if it is significant based on p value from chi square test
-table(credit_card_applications_categorical_var$No.of.times.60.DPD.or.worse.in.last.6.months, credit_card_applications_categorical_var$Performance.Tag.x)
-chisq.test(credit_card_applications_categorical_var$No.of.times.60.DPD.or.worse.in.last.6.months, credit_card_applications_categorical_var$Performance.Tag.x, correct=FALSE)
-#since p-value = p-value < 2.2e-16, we reject the null hypothesis and conclude that variable  'No.of.times.60.DPD.or.worse.in.last.6.months' is significant 
-
-
-#No.of.times.60.DPD.or.worse.in.last.12.months - check if it is significant based on p value from chi square test
-table(credit_card_applications_categorical_var$No.of.times.60.DPD.or.worse.in.last.12.months, credit_card_applications_categorical_var$Performance.Tag.x)
-chisq.test(credit_card_applications_categorical_var$No.of.times.60.DPD.or.worse.in.last.12.months, credit_card_applications_categorical_var$Performance.Tag.x, correct=FALSE)
-#since p-value = p-value < 2.2e-16, we reject the null hypothesis and conclude that variable  'No.of.times.60.DPD.or.worse.in.last.12.months' is significant 
-
-
-#No.of.times.30.DPD.or.worse.in.last.6.months - check if it is significant based on p value from chi square test
-table(credit_card_applications_categorical_var$No.of.times.30.DPD.or.worse.in.last.6.months, credit_card_applications_categorical_var$Performance.Tag.x)
-chisq.test(credit_card_applications_categorical_var$No.of.times.30.DPD.or.worse.in.last.6.months, credit_card_applications_categorical_var$Performance.Tag.x, correct=FALSE)
-#since p-value = p-value < 2.2e-16, we reject the null hypothesis and conclude that variable  'No.of.times.30.DPD.or.worse.in.last.6.months' is significant 
-
-
-#No.of.times.30.DPD.or.worse.in.last.12.months - check if it is significant based on p value from chi square test
-table(credit_card_applications_categorical_var$No.of.times.30.DPD.or.worse.in.last.12.months, credit_card_applications_categorical_var$Performance.Tag.x)
-chisq.test(credit_card_applications_categorical_var$No.of.times.30.DPD.or.worse.in.last.12.months, credit_card_applications_categorical_var$Performance.Tag.x, correct=FALSE)
-#since p-value = p-value < 2.2e-16, we reject the null hypothesis and conclude that variable  'No.of.times.30.DPD.or.worse.in.last.12.months' is significant 
-
-#ALL the DPD  variables are significant for chi square test, now we have to multicollinaearity among them so that we can reduce the variable 
-# which is function of others
-
-#WOE to do the feature selection for continuous variables
-#--------------------------------------------------------
-colnames(credit_card_applications_numerical_var)
-str(credit_card_applications_numerical_var)
-credit_card_applications_numerical_var$Performance.Tag <- as.integer(credit_card_applications_numerical_var$Performance.Tag)
-class(credit_card_eda$Performance.Tag)
-IV <- create_infotables(data=credit_card_applications_numerical_var, y="Performance.Tag", bins=10, parallel=TRUE)
-IV$Summary
-
-knitr::kable(head(IV$Summary))
-
-knitr::kable(IV$Tables$Avgas.CC.Utilization.in.last.12.months)
-knitr::kable(IV$Tables$No.of.trades.opened.in.last.12.months)
-knitr::kable(IV$Tables$No.of.PL.trades.opened.in.last.12.months)
-knitr::kable(IV$Tables$No.of.Inquiries.in.last.12.months)
 
 #role rate matrix
 #----------------
@@ -926,55 +827,350 @@ IV$Summary
 # 1. Education - Null hypothesis is Education is insignificant in deciding customer will default
 cc_applications_Edu <- table(credit_card_eda$Performance.Tag, credit_card_eda$Education)
 chisq.test(cc_applications_Edu)
-#X-squared = 1.5913, df = 4, p-value = 0.8104
+#X-squared = 2.5828, df = 4, p-value = 0.6299
+#since p value >.05 we accept that education is insignificant variable.
 
 # 2. Gender - Null hypothesis is Gender is insignificant in deciding customer will default
 cc_applications_Gender <- table(credit_card_eda$Performance.Tag, credit_card_eda$Gender)
 chisq.test(cc_applications_Gender)
-#X-squared = 0.98444, df = 2, p-value = 0.6113
+#X-squared = 0.96875, df = 1, p-value = 0.325
+
+##since p value >.05 we accept that Gender  is insignificant variable.
 
 # 3. Marital status - Null hypothesis: Marital status is insignificant in deciding customer will default
-cc_applications_Married <- table(credit_card_eda$Performance.Tag, credit_card_eda$Marital.Status..at.the.time.of.application.)
+cc_applications_Married <- table(credit_card_eda$Performance.Tag, credit_card_eda$Marital.Status)
 chisq.test(cc_applications_Married)
-#X-squared = 0.51874, df = 2, p-value = 0.7715
+#X-squared = 0.2546, df = 1, p-value = 0.6139
+
+##since p value >.05 we accept that Marital status   is insignificant variable.
+
 
 # 4. Profession - Null hypothesis: Profession is insignificant in deciding customer will default
 cc_applications_Profession <- table(credit_card_eda$Performance.Tag, credit_card_eda$Profession)
 chisq.test(cc_applications_Profession)
-# X-squared = 7.3928, df = 3, p-value = 0.06038
+# X-squared = 5.8465, df = 2, p-value = 0.05376
+
+##since p value >.05 we accept that profession   is insignificant variable.
 
 # 5. ResidenceType - Null hypothesis: ResidenceType is insignificant in deciding customer will default
 cc_applications_Residence <- table(credit_card_eda$Performance.Tag, credit_card_eda$Type.of.residence)
 chisq.test(cc_applications_Residence)
-# X-squared = 2.5727, df = 5, p-value = 0.7655
+# X-squared = 2.2175, df = 4, p-value = 0.6958
+
+##since p value >.05 we accept that ResidenceType is insignificant variable.
 
 
 # 6. Number of dependents - Null hypothesis: Number of dependents is insignificant in deciding customer will default
 cc_applications_Dependents <- table(credit_card_eda$Performance.Tag, credit_card_eda$No.of.dependents)
 chisq.test(cc_applications_Dependents)
-#X-squared = 7.5544, df = 5, p-value = 0.1826
+#X-squared = 7.6824, df = 4, p-value = 0.1039
 
-# 7. Number of month in current residence - Null hypothesis: Number of month in current residence is insignificant in deciding customer will default
-cc_applications_residenceYrs <- table(credit_card_eda$Performance.Tag, credit_card_eda$No.of.Years.in.current.residence)
+##since p value >.05 we accept that ResidenceType is insignificant variable.
+
+
+# 7. Number of years in current residence - Null hypothesis: Number of month in current residence is insignificant in deciding customer will default
+cc_applications_residenceYrs <- table(credit_card_eda$Performance.Tag, credit_card_eda$Residence.Years)
 chisq.test(cc_applications_residenceYrs)
-# X-squared = 27.46, df = 3, p-value = 0.000004715
+# X-squared = 87.972, df = 2, p-value = 2.2e-16
 
-# 8. Number of month in current company - Null hypothesis: Number of month in current company is insignificant in deciding customer will default
-cc_applications_companyYrs <- table(credit_card_eda$Performance.Tag, credit_card_eda$No.of.Years.in.current.company)
+##since p value <.05 we accept reject the null hypothesis - ie Number of years in current residence is a significant variable
+
+
+# 8. Number of years  in current company - Null hypothesis: Number of month in current company is insignificant in deciding customer will default
+cc_applications_companyYrs <- table(credit_card_eda$Performance.Tag, credit_card_eda$Company.Years)
 chisq.test(cc_applications_companyYrs)
-#X-squared = 148.74, df = 82, p-value = 0.000000002207
+#X-squared = 42.432, df = 2, p-value = 6.108e-10
+##since p value <.05 we accept reject the null hypothesis - ie Number of years  in current company is a significant variable
+
 
 # 9. Income - Null hypothesis: Income is insignificant in deciding customer will default
 cc_applications_income <- table(credit_card_eda$Performance.Tag, credit_card_eda$IncomeRange)
 chisq.test(cc_applications_income)
-# X-squared = 182.91, df = 62, p-value = 0.00000000000000022
+# X-squared = 99.127, df = 3, p-value = 2.2e-16
 
-# 10. Education - Null hypothesis is Education is insignificant in deciding customer will default
+##since p value <.05 we accept reject the null hypothesis - ie Income range  is a significant variable
+
+
+# 10. Age  - Null hypothesis is Education is insignificant in deciding customer will default
 summary(credit_card_eda$Age)
-credit_card_eda$AgeRange <- cut(credit_card_eda$Age, 
-                                                        breaks = c(-Inf, 11, 21, 31, 41, 51, 61, Inf), 
-                                                        labels = c("0-10 Years", "11-20 Years", "21-30 Years", "31-40 Years", "41-50 Years", "51-60 Years", ">60 Years"), 
-                                                        right = FALSE)
-cc_applications_age <- table(credit_card_eda$Performance.Tag, credit_card_eda$AgeRange)
+##credit_card_eda$AgeRange <- cut(credit_card_eda$Age, 
+                                                    #    breaks = c(-Inf, 11, 21, 31, 41, 51, 61, Inf), 
+                                                       # labels = c("0-10 Years", "11-20 Years", "21-30 Years", "31-40 Years", "41-50 Years", "51-60 Years", ">60 Years"), 
+                                                       # right = FALSE)
+cc_applications_age <- table(credit_card_eda$Performance.Tag, credit_card_eda$AgeCategory)
 chisq.test(cc_applications_age)
-#X-squared = 1.5913, df = 4, p-value = 0.8104
+#X-squared = 2.6088, df = 2, p-value = 0.2713
+
+##since p value >.05 we accept reject the null hypothesis - ie Age category  is a insignificant variable
+
+# 11. No.of.times.90.DPD.or.worse.in.last.6.months- Null hypothesis is that No.of.times.90.DPD.or.worse.in.last.6.months is an insignificant vaariable
+cc_application_No.of.times.90.DPD.or.worse.in.last.6.months <- table(credit_card_eda$Performance.Tag,credit_card_eda$No.of.times.90.DPD.or.worse.in.last.6.months)
+chisq.test(cc_application_No.of.times.90.DPD.or.worse.in.last.6.months)
+
+# X-squared = 557.67, df = 3, p-value < 2.2e-16
+#since p value <.05 we  reject the null hypothesis - ie No.of.times.90.DPD.or.worse.in.last.6.months  is a significant variable
+
+# 12.No.of.times.60.DPD.or.worse.in.last.6.months - Null hypotheis is that No.of.times.60.DPD.or.worse.in.last.6.months is insignificant variable 
+cc_application_No.of.times.60.DPD.or.worse.in.last.6.months <- table(credit_card_eda$Performance.Tag,credit_card_eda$No.of.times.60.DPD.or.worse.in.last.6.months)
+chisq.test(cc_application_No.of.times.60.DPD.or.worse.in.last.6.months)
+# X-squared = 712.14, df = 5, p-value < 2.2e-16
+#since p value <.05 we  reject the null hypothesis - ie No.of.times.60.DPD.or.worse.in.last.6.months  is a significant variable
+
+#13. No.of.times.30.DPD.or.worse.in.last.6.months - Null hypotheis is that No.of.times.30.DPD.or.worse.in.last.6.months is insignificant variable 
+cc_application_No.of.times.30.DPD.or.worse.in.last.6.months  <- table(credit_card_eda$Performance.Tag,credit_card_eda$No.of.times.30.DPD.or.worse.in.last.6.months)
+chisq.test(cc_application_No.of.times.30.DPD.or.worse.in.last.6.months )
+
+# X-squared = 818.74, df = 7, p-value < 2.2e-16
+# since p value <.05 we  reject the null hypothesis - ie No.of.times.30.DPD.or.worse.in.last.6.months  is a significant variable
+
+# 14. No.of.times.90.DPD.or.worse.in.last.12.months - Null hypotheis is that No.of.times.90.DPD.or.worse.in.last.12.months is insignificant variable 
+
+cc_application_No.of.times.90.DPD.or.worse.in.last.12.months <- table(credit_card_eda$Performance.Tag,credit_card_eda$No.of.times.90.DPD.or.worse.in.last.12.months)
+chisq.test(cc_application_No.of.times.90.DPD.or.worse.in.last.12.months)
+
+# X-squared = 713.49, df = 5, p-value < 2.2e-16
+# since p value <.05 we  reject the null hypothesis - ie No.of.times.90.DPD.or.worse.in.last.12.months  is a significant variable
+
+#15. No.of.times.60.DPD.or.worse.in.last.12.months- Null hypotheis is that No.of.times.60.DPD.or.worse.in.last.12.months is insignificant variable  
+
+cc_application_No.of.times.60.DPD.or.worse.in.last.12.months <- table(credit_card_eda$Performance.Tag,credit_card_eda$No.of.times.60.DPD.or.worse.in.last.12.months)
+chisq.test(cc_application_No.of.times.60.DPD.or.worse.in.last.12.months)
+
+# X-squared = 627.45, df = 7, p-value < 2.2e-16
+# since p value <.05 we  reject the null hypothesis - ie No.of.times.60.DPD.or.worse.in.last.12.months  is a significant variable
+
+
+#16. No.of.times.30.DPD.or.worse.in.last.12.months- Null hypotheis is that No.of.times.30.DPD.or.worse.in.last.12.months is insignificant variable  
+
+cc_application_No.of.times.30.DPD.or.worse.in.last.12.months <- table(credit_card_eda$Performance.Tag,credit_card_eda$No.of.times.30.DPD.or.worse.in.last.12.months)
+chisq.test(cc_application_No.of.times.30.DPD.or.worse.in.last.12.months)
+
+#X-squared = 746.64, df = 9, p-value < 2.2e-16
+
+# since p value <.05 we  reject the null hypothesis - ie No.of.times.30.DPD.or.worse.in.last.12.months  is a significant variable
+
+
+#17.Avgas.CC.Utilization.in.last.12.months - Null hypotheis is that Avgas.CC.Utilization.in.last.12.months is insignificant variable 
+# Please ensure NA are properly removed since we are getting a warning in chi sqaure test 
+
+cc_application_Avgas.CC.Utilization.in.last.12.months <- table(credit_card_eda$Performance.Tag,credit_card_eda$Avgas.CC.Utilization.in.last.12.months)
+chisq.test(cc_application_Avgas.CC.Utilization.in.last.12.months)
+#X-squared = 1013.4, df = 113, p-value < 2.2e-16
+
+# since p value <.05 we  reject the null hypothesis - ie vgas.CC.Utilization.in.last.12.months is a significant variable
+
+# 18 No.of.trades.opened.in.last.6.months - Null hypothesis is that No.of.trades.opened.in.last.6.months is an insignificant variable
+
+cc_application_No.of.trades.opened.in.last.6.months <- table(credit_card_eda$Performance.Tag,credit_card_eda$No.of.trades.opened.in.last.6.months)
+chisq.test(cc_application_No.of.trades.opened.in.last.6.months)
+
+
+#X-squared = 516.94, df = 12, p-value < 2.2e-16
+# since p value <.05 we  reject the null hypothesis - ie No.of.trades.opened.in.last.6.month is a significant variable
+
+#19. No.of.trades.opened.in.last.12.months- Null hypothesis is that No.of.trades.opened.in.last.12.months is an insignificant variable
+cc_application_No.of.trades.opened.in.last.12.months <- table(credit_card_eda$Performance.Tag,credit_card_eda$No.of.trades.opened.in.last.12.months)
+chisq.test(cc_application_No.of.trades.opened.in.last.12.months)
+
+#X-squared = 771.09, df = 28, p-value < 2.2e-16
+# since p value <.05 we  reject the null hypothesis - ie No.of.trades.opened.in.last.12.month is a significant variable
+
+# 20. No.of.PL.trades.opened.in.last.6.months- null hypothesis is that No.of.PL.trades.opened.in.last.6.months is an insignificant variable
+
+cc_application_No.of.PL.trades.opened.in.last.6.months <- table(credit_card_eda$Performance.Tag,credit_card_eda$No.of.PL.trades.opened.in.last.6.months)
+chisq.test(cc_application_No.of.PL.trades.opened.in.last.6.months)
+
+#X-squared = 576.47, df = 6, p-value < 2.2e-16
+
+# since p value <.05 we  reject the null hypothesis - ie No.of.PL.trades.opened.in.last.6.months is a significant variable
+
+#21.No.of.PL.trades.opened.in.last.12.months- null hypothesis is that No.of.PL.trades.opened.in.last.12.months is an insignificant variable
+
+cc_application_No.of.PL.trades.opened.in.last.12.months <- table(credit_card_eda$Performance.Tag,credit_card_eda$No.of.PL.trades.opened.in.last.12.months)
+chisq.test(cc_application_No.of.PL.trades.opened.in.last.12.months)
+
+# X-squared = 717.11, df = 12, p-value < 2.2e-16
+# since p value <.05 we  reject the null hypothesis - ie No.of.PL.trades.opened.in.last.12.months is a significant variable
+
+#22. No.of.Inquiries.in.last.6.months..excluding.home...auto.loans.- null hypothesis is that No.of.Inquiries.in.last.6.months..excluding.home...auto.loans. is an insignificant variable
+
+cc_application_No.of.Inquiries.in.last.6.months..excluding.home...auto.loans. <- table(credit_card_eda$Performance.Tag,credit_card_eda$No.of.Inquiries.in.last.6.months..excluding.home...auto.loans.)
+chisq.test(cc_application_No.of.Inquiries.in.last.6.months..excluding.home...auto.loans.)
+
+# X-squared = 528.65, df = 10, p-value < 2.2e-16
+# since p value <.05 we  reject the null hypothesis - ie No.of.Inquiries.in.last.6.months..excluding.home...auto.loans.is a signficant variable.
+
+#23. No.of.Inquiries.in.last.12.months..excluding.home...auto.loans.- null hypothesis is that No.of.Inquiries.in.last.12.months..excluding.home...auto.loans. is an insignificant variable
+
+cc_application_No.of.Inquiries.in.last.12.months..excluding.home...auto.loans. <- table(credit_card_eda$Performance.Tag,credit_card_eda$No.of.Inquiries.in.last.12.months..excluding.home...auto.loans.)
+chisq.test(cc_application_No.of.Inquiries.in.last.12.months..excluding.home...auto.loans.)
+
+# X-squared = 684.01, df = 20, p-value < 2.2e-16
+
+#since p value <.05 we  reject the null hypothesis - ie No.of.Inquiries.in.last.12.months..excluding.home...auto.loans.is a signficant variable.
+
+#24. Presence.of.open.home.loan - null hypothesis is that Presence.of.open.home.loan is an insignificant variable
+
+cc_application_Presence.of.open.home.loan <- table(credit_card_eda$Performance.Tag,credit_card_eda$Presence.of.open.home.loan)
+chisq.test(cc_application_Presence.of.open.home.loan)
+
+#X-squared = 43.353, df = 1, p-value = 4.571e-11
+#since p value <.05 we  reject the null hypothesis - ie Presence.of.open.home.loan is a signficant variable.
+
+#25. Presence.of.open.auto.loan
+
+cc_Presence.of.open.auto.loan <- table(credit_card_eda$Performance.Tag,credit_card_eda$Presence.of.open.auto.loan)
+chisq.test(cc_Presence.of.open.auto.loan)
+
+# X-squared = 4.1051, df = 1, p-value = 0.04276
+#since p value <.05 we  reject the null hypothesis - ie Presence.of.open.auto.loan is a signficant variable.
+
+#26. Outstanding.Balance- Null hypoteisis is that Outstanding.Balance is an insignificant variable
+
+cc_Outstanding.Balance <- table(credit_card_eda$Performance.Tag,credit_card_eda$Outstanding.Balance)
+chisq.test(cc_Outstanding.Balance )
+
+# X-squared = 65693, df = 63716, p-value = 2.086e-08
+#since p value <.05 we  reject the null hypothesis - ie Outstanding.Balance is a signficant variable.
+
+#27. Total.No.of.Trades - Null hypothesis is that Total.No.of.Trades is an insignificant variable
+
+cc_Total.No.of.Trades <- table(credit_card_eda$Performance.Tag,credit_card_eda$Total.No.of.Trades)
+chisq.test(cc_Total.No.of.Trades )
+
+# X-squared = 697.03, df = 44, p-value < 2.2e-16
+# #since p value <.05 we  reject the null hypothesis - ie Total.No.of.Trades is a signficant variable.
+
+#-------------Summary of feature selection-chqi square test ------------------------------------------------------------
+#######################################################################################################
+
+# Sno     Variable name                                               pvalue                   Significant 
+# 1.      Education                                                   0.6299                            No
+# 2.      Gender                                                      0.325                             No
+# 3.      Marital status                                              0.6139                            No
+# 4.      Profession                                                  0.05376                           No
+# 5.      Residence Type                                              0.6958                            No
+# 6.      No of dependents                                            0.1039                            No
+# 7.      Number of years in current residence                        2.2e-16                           Yes
+# 8.      Number of years in current company                          6.108e-10                         Yes
+# 9.      Income                                                      2.2e-16                           Yes 
+# 10.     Age                                                         0.2713                            No
+# 11.     No.of.times.90.DPD.or.worse.in.last.6.months                2.2e-16                           Yes
+# 12.     No.of.times.60.DPD.or.worse.in.last.6.months                2.2e-16                           Yes
+# 13.     No.of.times.30.DPD.or.worse.in.last.6.months                2.2e-16                           Yes
+# 14.     No.of.times.90.DPD.or.worse.in.last.12.months               2.2e-16                           Yes
+# 15.     No.of.times.60.DPD.or.worse.in.last.12.months               2.2e-16                           Yes
+# 16.     No.of.times.30.DPD.or.worse.in.last.12.months               2.2e-16                           Yes
+# 17.     Avgas.CC.Utilization.in.last.12.months                      2.2e-16                           Yes
+# 18.     No.of.trades.opened.in.last.6.months                        2.2e-16                           Yes
+# 19.     No.of.trades.opened.in.last.12.months                       2.2e-16                           Yes
+# 20.     No.of.PL.trades.opened.in.last.6.months                     2.2e-16                           Yes
+# 21.     No.of.PL.trades.opened.in.last.12.months                    2.2e-16                           Yes
+# 22.     No.of.Inquiries.in.last.6.months..excluding.home.auto.loans 2.2e-16                           Yes
+# 23      No.of.Inquiries.in.last.12.months..excluding.home.auto.loans2.2e-16                           No
+# 24.     Presence.of.open.home.loan                                  4.571e-11                         Yes
+# 25.     Presence.of.open.auto.loan                                  0.04276                           Yes
+# 26.     Outstanding.Balance                                         2.086e-08                         Yes
+# 27.     Total.No.of.Trades                                          2.2e-16                           Yes 
+ 
+
+#Feature selection
+#------------------
+#Chi square test to do the feature selection for categorical variables
+str(credit_card_applications_categorical_var)
+credit_card_applications_categorical_var
+mutate_each_(funs(factor(.)),categorical_variables)
+str(credit_card_applications_categorical_var)
+#Gender - check if it is significant based on p value from chi square test
+table(credit_card_applications_categorical_var$Gender, credit_card_applications_categorical_var$Performance.Tag.x)
+chisq.test(credit_card_applications_categorical_var$Gender, credit_card_applications_categorical_var$Performance.Tag.x, correct=FALSE)
+#since p-value = 0.6113 > 0.05, we accept the null hypothesis that the variable Gender is insignificant 
+
+#Marital.Status..at.the.time.of.application. - check if it is significant based on p value from chi square test
+table(credit_card_applications_categorical_var$Marital.Status..at.the.time.of.application., credit_card_applications_categorical_var$Performance.Tag.x)
+chisq.test(credit_card_applications_categorical_var$Marital.Status..at.the.time.of.application., credit_card_applications_categorical_var$Performance.Tag.x, correct=FALSE)
+#since p-value = 0.7715 > 0.05, we accept the null hypothesis that the variable Marital.Status is insignificant
+
+#No.of.dependents - check if it is significant based on p value from chi square test
+table(credit_card_applications_categorical_var$No.of.dependents, credit_card_applications_categorical_var$Performance.Tag.x)
+chisq.test(credit_card_applications_categorical_var$No.of.dependents, credit_card_applications_categorical_var$Performance.Tag.x, correct=FALSE)
+#since p-value = 0.1826 > 0.05, we accept the null hypothesis that the variable No.of.dependents is insignificant 
+
+#Education - check if it is significant based on p value from chi square test
+table(credit_card_applications_categorical_var$Education, credit_card_applications_categorical_var$Performance.Tag.x)
+chisq.test(credit_card_applications_categorical_var$Education, credit_card_applications_categorical_var$Performance.Tag.x, correct=FALSE)
+#since p-value = 0.8104 > 0.05, we accept the null hypothesis that the variable Education is insignificant 
+
+#Profession - check if it is significant based on p value from chi square test
+table(credit_card_applications_categorical_var$Profession, credit_card_applications_categorical_var$Performance.Tag.x)
+chisq.test(credit_card_applications_categorical_var$Profession, credit_card_applications_categorical_var$Performance.Tag.x, correct=FALSE)
+#since p-value = 0.06038 > 0.05, we accept the null hypothesis that the variable Profession is insignificant 
+
+#Type.of.residence - check if it is significant based on p value from chi square test
+table(credit_card_applications_categorical_var$Type.of.residence, credit_card_applications_categorical_var$Performance.Tag.x)
+chisq.test(credit_card_applications_categorical_var$Type.of.residence, credit_card_applications_categorical_var$Performance.Tag.x, correct=FALSE)
+#since p-value = p-value = 0.7655 > 0.05 , we accept the null hypothesis that the variable Type.of.residence is insignificant 
+
+#Presence.of.open.home.loan - check if it is significant based on p value from chi square test
+table(credit_card_applications_categorical_var$Presence.of.open.home.loan, credit_card_applications_categorical_var$Performance.Tag.x)
+chisq.test(credit_card_applications_categorical_var$Presence.of.open.home.loan, credit_card_applications_categorical_var$Performance.Tag.x, correct=FALSE)
+#since p-value = 1.716e-11 < 0.05, we reject the null hypothesis and conclude that variable  'Presence.of.open.home.loan' is significant 
+
+#Presence.of.open.auto.loan - check if it is significant based on p value from chi square test
+table(credit_card_applications_categorical_var$Presence.of.open.auto.loan, credit_card_applications_categorical_var$Performance.Tag.x)
+chisq.test(credit_card_applications_categorical_var$Presence.of.open.auto.loan, credit_card_applications_categorical_var$Performance.Tag.x, correct=FALSE)
+#since p-value = 0.03454 < 0.05, we reject the null hypothesis and conclude that variable  'Presence.of.open.auto.loan' is significant 
+
+#No.of.times.90.DPD.or.worse.in.last.6.months - check if it is significant based on p value from chi square test
+table(credit_card_applications_categorical_var$No.of.times.90.DPD.or.worse.in.last.6.months, credit_card_applications_categorical_var$Performance.Tag.x)
+chisq.test(credit_card_applications_categorical_var$No.of.times.90.DPD.or.worse.in.last.6.months, credit_card_applications_categorical_var$Performance.Tag.x, correct=FALSE)
+#since p-value = p-value < 2.2e-16, we reject the null hypothesis and conclude that variable  'No.of.times.90.DPD.or.worse.in.last.6.months' is significant 
+
+
+#No.of.times.90.DPD.or.worse.in.last.12.months - check if it is significant based on p value from chi square test
+table(credit_card_applications_categorical_var$No.of.times.90.DPD.or.worse.in.last.12.months, credit_card_applications_categorical_var$Performance.Tag.x)
+chisq.test(credit_card_applications_categorical_var$No.of.times.90.DPD.or.worse.in.last.12.months, credit_card_applications_categorical_var$Performance.Tag.x, correct=FALSE)
+#since p-value = p-value < 2.2e-16, we reject the null hypothesis and conclude that variable  'No.of.times.90.DPD.or.worse.in.last.12.months' is significant 
+
+#No.of.times.60.DPD.or.worse.in.last.6.months - check if it is significant based on p value from chi square test
+table(credit_card_applications_categorical_var$No.of.times.60.DPD.or.worse.in.last.6.months, credit_card_applications_categorical_var$Performance.Tag.x)
+chisq.test(credit_card_applications_categorical_var$No.of.times.60.DPD.or.worse.in.last.6.months, credit_card_applications_categorical_var$Performance.Tag.x, correct=FALSE)
+#since p-value = p-value < 2.2e-16, we reject the null hypothesis and conclude that variable  'No.of.times.60.DPD.or.worse.in.last.6.months' is significant 
+
+
+#No.of.times.60.DPD.or.worse.in.last.12.months - check if it is significant based on p value from chi square test
+table(credit_card_applications_categorical_var$No.of.times.60.DPD.or.worse.in.last.12.months, credit_card_applications_categorical_var$Performance.Tag.x)
+chisq.test(credit_card_applications_categorical_var$No.of.times.60.DPD.or.worse.in.last.12.months, credit_card_applications_categorical_var$Performance.Tag.x, correct=FALSE)
+#since p-value = p-value < 2.2e-16, we reject the null hypothesis and conclude that variable  'No.of.times.60.DPD.or.worse.in.last.12.months' is significant 
+
+
+#No.of.times.30.DPD.or.worse.in.last.6.months - check if it is significant based on p value from chi square test
+table(credit_card_applications_categorical_var$No.of.times.30.DPD.or.worse.in.last.6.months, credit_card_applications_categorical_var$Performance.Tag.x)
+chisq.test(credit_card_applications_categorical_var$No.of.times.30.DPD.or.worse.in.last.6.months, credit_card_applications_categorical_var$Performance.Tag.x, correct=FALSE)
+#since p-value = p-value < 2.2e-16, we reject the null hypothesis and conclude that variable  'No.of.times.30.DPD.or.worse.in.last.6.months' is significant 
+
+
+#No.of.times.30.DPD.or.worse.in.last.12.months - check if it is significant based on p value from chi square test
+table(credit_card_applications_categorical_var$No.of.times.30.DPD.or.worse.in.last.12.months, credit_card_applications_categorical_var$Performance.Tag.x)
+chisq.test(credit_card_applications_categorical_var$No.of.times.30.DPD.or.worse.in.last.12.months, credit_card_applications_categorical_var$Performance.Tag.x, correct=FALSE)
+#since p-value = p-value < 2.2e-16, we reject the null hypothesis and conclude that variable  'No.of.times.30.DPD.or.worse.in.last.12.months' is significant 
+
+#ALL the DPD  variables are significant for chi square test, now we have to multicollinaearity among them so that we can reduce the variable 
+# which is function of others
+
+#WOE to do the feature selection for continuous variables
+#--------------------------------------------------------
+colnames(credit_card_applications_numerical_var)
+str(credit_card_applications_numerical_var)
+credit_card_applications_numerical_var$Performance.Tag <- as.integer(credit_card_applications_numerical_var$Performance.Tag)
+class(credit_card_eda$Performance.Tag)
+IV <- create_infotables(data=credit_card_applications_numerical_var, y="Performance.Tag", bins=10, parallel=TRUE)
+IV$Summary
+
+knitr::kable(head(IV$Summary))
+
+knitr::kable(IV$Tables$Avgas.CC.Utilization.in.last.12.months)
+knitr::kable(IV$Tables$No.of.trades.opened.in.last.12.months)
+knitr::kable(IV$Tables$No.of.PL.trades.opened.in.last.12.months)
+knitr::kable(IV$Tables$No.of.Inquiries.in.last.12.months)
+
