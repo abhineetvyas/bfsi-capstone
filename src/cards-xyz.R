@@ -1292,10 +1292,9 @@ credit_card_fact <- data.frame(Gender, No.of.dependents, Education, Type.of.resi
                                        Marital.Status, Profession, No.of.times.90.DPD.or.worse.in.last.6.months,
                                        No.of.times.30.DPD.or.worse.in.last.6.months, Presence.of.open.auto.loan)
 
-dummies<- data.frame(sapply(credit_card_fact, 
-                            function(x) data.frame(model.matrix(~x-1,data =credit_card_fact))[,-1]))
 
-credit_card_final<- cbind(credit_card_num_vars,dummies)
+
+credit_card_final<- cbind(credit_card_num_vars,credit_card_fact)
 
 credit_card_final$Performance.Tag <- credit_card_eda$Performance.Tag
 
@@ -1304,6 +1303,10 @@ credit_card_final$Performance.Tag <- credit_card_eda$Performance.Tag
 #--------------------------------------------------------------------
 
 # splitting the data between train and test
+dummies<- data.frame(sapply(credit_card_fact, 
+                            function(x) data.frame(model.matrix(~x-1,data =credit_card_fact))[,-1]))
+
+credit_card_regression <- cbind(credit_card_num_vars,dummies)
 set.seed(100)
 
 indices = sample.split(credit_card_final$Performance.Tag, SplitRatio = 0.7)
