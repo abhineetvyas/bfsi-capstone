@@ -1243,3 +1243,62 @@ knitr::kable(IV$Tables$No.of.trades.opened.in.last.12.months)
 knitr::kable(IV$Tables$No.of.PL.trades.opened.in.last.12.months)
 knitr::kable(IV$Tables$No.of.Inquiries.in.last.12.months)
 
+#--------------------------------------------------------------------
+# Prepare data for modeling
+#--------------------------------------------------------------------
+
+# As we have many numeric variables and ranges varies for each so for batter impact 
+#  identification scaling all numerical variables.
+No.of.trades.opened.in.last.6.months <- scale(credit_card_eda$No.of.PL.trades.opened.in.last.6.months)
+No.of.PL.trades.opened.in.last.6.months <- scale(credit_card_eda$No.of.PL.trades.opened.in.last.6.months)
+No.of.Inquiries.in.last.6.months <- scale(credit_card_eda$No.of.Inquiries.in.last.6.months)
+Total.No.of.Trades <- scale(credit_card_eda$Total.No.of.Trades)
+Income <- scale(credit_card_eda$Income)
+No.of.months.in.current.residence <- scale(credit_card_eda$No.of.months.in.current.residence)
+Avgas.CC.Utilization.in.last.12.months <- scale(credit_card_eda$Avgas.CC.Utilization.in.last.12.months)       
+No.of.trades.opened.in.last.12.months <- scale(credit_card_eda$No.of.trades.opened.in.last.12.months)
+No.of.PL.trades.opened.in.last.12.months <- scale(credit_card_eda$No.of.PL.trades.opened.in.last.12.months)
+No.of.Inquiries.in.last.12.months <- scale(credit_card_eda$No.of.Inquiries.in.last.12.months)
+Outstanding.Balance <- scale(credit_card_eda$Outstanding.Balance)
+
+credit_card_num_vars <- data.frame(No.of.trades.opened.in.last.6.months, No.of.PL.trades.opened.in.last.6.months,
+                                  No.of.Inquiries.in.last.6.months,No.of.Inquiries.in.last.6.months,
+                                  Total.No.of.Trades, Income, No.of.months.in.current.residence, Avgas.CC.Utilization.in.last.12.months,
+                                  No.of.trades.opened.in.last.12.months, Avgas.CC.Utilization.in.last.12.months,
+                                  No.of.trades.opened.in.last.12.months, No.of.PL.trades.opened.in.last.12.months,
+                                  No.of.Inquiries.in.last.12.months, Outstanding.Balance)
+
+# We have following categorical variables
+Gender <- as.factor(credit_card_eda$Gender)                         
+No.of.dependents <- as.factor(credit_card_eda$No.of.dependents)
+Education  <- as.factor(credit_card_eda$Education)
+Type.of.residence <- as.factor(credit_card_eda$Type.of.residence)
+Company.Years <- as.factor(credit_card_eda$Company.Years)
+No.of.times.60.DPD.or.worse.in.last.6.months <- as.factor(credit_card_eda$No.of.times.60.DPD.or.worse.in.last.6.months) 
+No.of.times.90.DPD.or.worse.in.last.12.months <- as.factor(credit_card_eda$No.of.times.90.DPD.or.worse.in.last.12.months)
+No.of.times.30.DPD.or.worse.in.last.12.months <- as.factor(credit_card_eda$No.of.times.30.DPD.or.worse.in.last.12.months)
+Presence.of.open.home.loan <- as.factor(credit_card_eda$Presence.of.open.home.loan)
+AgeCategory <- as.factor(credit_card_eda$AgeCategory)
+Marital.Status <- as.factor(credit_card_eda$Marital.Status)
+Profession <- as.factor(credit_card_eda$Profession)
+No.of.times.90.DPD.or.worse.in.last.6.months <- as.factor(credit_card_eda$No.of.times.90.DPD.or.worse.in.last.6.months)
+No.of.times.30.DPD.or.worse.in.last.6.months <- as.factor(credit_card_eda$No.of.times.30.DPD.or.worse.in.last.6.months)
+No.of.times.60.DPD.or.worse.in.last.12.months <- as.factor(credit_card_eda$No.of.times.60.DPD.or.worse.in.last.12.months)
+Presence.of.open.auto.loan <- as.factor(credit_card_eda$Presence.of.open.auto.loan)
+
+credit_card_fact <- data.frame(Gender, No.of.dependents, Education, Type.of.residence, Company.Years, 
+                                       No.of.times.60.DPD.or.worse.in.last.6.months, No.of.times.90.DPD.or.worse.in.last.12.months,
+                                       No.of.times.30.DPD.or.worse.in.last.12.months, Presence.of.open.home.loan,AgeCategory,
+                                       Marital.Status, Profession, No.of.times.90.DPD.or.worse.in.last.6.months,
+                                       No.of.times.30.DPD.or.worse.in.last.6.months, Presence.of.open.auto.loan)
+
+dummies<- data.frame(sapply(credit_card_fact, 
+                            function(x) data.frame(model.matrix(~x-1,data =credit_card_fact))[,-1]))
+
+credit_card_final<- cbind(credit_card_num_vars,dummies)
+
+credit_card_final$Performance.Tag <- credit_card_eda$Performance.Tag
+
+#--------------------------------------------------------------------
+# 4. Data Modeling - Logistic regression
+#--------------------------------------------------------------------
