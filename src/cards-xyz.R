@@ -1302,3 +1302,20 @@ credit_card_final$Performance.Tag <- credit_card_eda$Performance.Tag
 #--------------------------------------------------------------------
 # 4. Data Modeling - Logistic regression
 #--------------------------------------------------------------------
+
+# splitting the data between train and test
+set.seed(100)
+
+indices = sample.split(credit_card_final$Performance.Tag, SplitRatio = 0.7)
+
+train = credit_card_final[indices,]
+
+test = credit_card_final[!(indices),]
+
+model_1 = glm(Performance.Tag ~ ., data = train, family = "binomial")
+summary(model_1)# AIC: 16413
+# Stepwise selection
+model_2<- stepAIC(model_1, direction="both")
+summary(model_2)
+# Removing multicollinearity through VIF check
+#model_3
