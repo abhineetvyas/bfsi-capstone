@@ -1296,6 +1296,55 @@ credit_card_fact <- data.frame(Gender, No.of.dependents, Education, Type.of.resi
 credit_card_final<- cbind(credit_card_num_vars,credit_card_fact)
 credit_card_final$Performance.Tag <- credit_card_eda$Performance.Tag
 
+#IV calculation, WOE analysis and imputation if required
+colnames(credit_card_eda)
+
+data1_credit_card_eda <- credit_card_eda[, -which(names(credit_card_eda) %in% c("IncomeRange", "Residence.Years", "Company.Years", "x_Avgas.CC.Utilization.in.last.12.months" ))]
+
+data1_credit_card_eda$Performance.Tag <- as.numeric(levels(data1_credit_card_eda$Performance.Tag))[data1_credit_card_eda$Performance.Tag]
+colnames(data1_credit_card_eda)
+
+IV <- create_infotables(data=data1_credit_card_eda, y="Performance.Tag", bins=10, parallel=TRUE)
+
+IV$Summary
+
+plot_infotables(IV, IV$Summary$Variable[1:4], same_scales=TRUE)
+
+#1. Avgas.CC.Utilization.in.last.12.months variable WOE analysis and mutation if required
+print(IV$Tables$Avgas.CC.Utilization.in.last.12.months, row.names=FALSE)
+
+# Avgas.CC.Utilization.in.last.12.months    N    Percent         WOE         IV
+# [0,4]                                     5493 0.07923777 -0.80842811 0.03636934
+# [5,6]                                     5435 0.07840111 -0.79760307 0.07155488
+# [7,8]                                     6828 0.09849545 -0.79889041 0.11587769
+# [9,11]                                    9560 0.13790517 -0.67128981 0.16209784
+# [12,14]                                   6575 0.09484587 -0.46771427 0.17893561
+# [15,22]                                   7416 0.10697748 -0.06395137 0.17936054
+# [23,36]                                   6837 0.09862528  0.46472310 0.20581255
+# [37,51]                                   7159 0.10327020  0.58331176 0.25197321
+# [52,71]                                   7000 0.10097659  0.56351111 0.29370218
+# [72,113]                                  7020 0.10126509  0.38040064 0.31119019
+
+
+data1_credit_card_eda[(data1_credit_card_eda$Avgas.CC.Utilization.in.last.12.months <= 8),]$Avgas.CC.Utilization.in.last.12.months <- -0.79760307  
+data1_credit_card_eda[(data1_credit_card_eda$Avgas.CC.Utilization.in.last.12.months >= 9)
+                                               & (data1_credit_card_eda$Avgas.CC.Utilization.in.last.12.months <= 11),]$Avgas.CC.Utilization.in.last.12.months <- -0.67128981                    
+data1_credit_card_eda[(data1_credit_card_eda$Avgas.CC.Utilization.in.last.12.months >= 12)
+                      & (data1_credit_card_eda$Avgas.CC.Utilization.in.last.12.months <= 14),]$Avgas.CC.Utilization.in.last.12.months <- -0.46771427                     
+data1_credit_card_eda[(data1_credit_card_eda$Avgas.CC.Utilization.in.last.12.months >= 15)
+                      & (data1_credit_card_eda$Avgas.CC.Utilization.in.last.12.months <= 22),]$Avgas.CC.Utilization.in.last.12.months <- -0.06395137                     
+data1_credit_card_eda[(data1_credit_card_eda$Avgas.CC.Utilization.in.last.12.months >= 23)
+                      & (data1_credit_card_eda$Avgas.CC.Utilization.in.last.12.months <= 36),]$Avgas.CC.Utilization.in.last.12.months <- 0.46472310                     
+data1_credit_card_eda[(data1_credit_card_eda$Avgas.CC.Utilization.in.last.12.months >= 23)
+                      & (data1_credit_card_eda$Avgas.CC.Utilization.in.last.12.months <= 36),]$Avgas.CC.Utilization.in.last.12.months <- 0.46472310                     
+data1_credit_card_eda[(data1_credit_card_eda$Avgas.CC.Utilization.in.last.12.months >= 37)
+                      & (data1_credit_card_eda$Avgas.CC.Utilization.in.last.12.months <= 71),]$Avgas.CC.Utilization.in.last.12.months <- 0.58331176                     
+data1_credit_card_eda[(data1_credit_card_eda$Avgas.CC.Utilization.in.last.12.months >= 72)
+                      & (data1_credit_card_eda$Avgas.CC.Utilization.in.last.12.months <= 113),]$Avgas.CC.Utilization.in.last.12.months <- 0.38040064                     
+
+
+                                            
+
 #--------------------------------------------------------------------
 # 4. Data Modeling - Logistic regression
 #--------------------------------------------------------------------
