@@ -1328,7 +1328,7 @@ print(IV$Tables$Avgas.CC.Utilization.in.last.12.months, row.names=FALSE)
 
 data1_credit_card_eda[(data1_credit_card_eda$Avgas.CC.Utilization.in.last.12.months <= 8),]$Avgas.CC.Utilization.in.last.12.months <- -0.79760307  
 data1_credit_card_eda[(data1_credit_card_eda$Avgas.CC.Utilization.in.last.12.months >= 9)
-                      & (data1_credit_card_eda$Avgas.CC.Utilization.in.last.12.months <= 11),]$Avgas.CC.Utilization.in.last.12.months <- -0.67128981                    
+                                               & (data1_credit_card_eda$Avgas.CC.Utilization.in.last.12.months <= 11),]$Avgas.CC.Utilization.in.last.12.months <- -0.67128981                    
 data1_credit_card_eda[(data1_credit_card_eda$Avgas.CC.Utilization.in.last.12.months >= 12)
                       & (data1_credit_card_eda$Avgas.CC.Utilization.in.last.12.months <= 14),]$Avgas.CC.Utilization.in.last.12.months <- -0.46771427                     
 data1_credit_card_eda[(data1_credit_card_eda$Avgas.CC.Utilization.in.last.12.months >= 15)
@@ -1590,7 +1590,7 @@ data1_credit_card_eda[(data1_credit_card_eda$No.of.trades.opened.in.last.6.month
 # There is some issue here in this variable as this feild is showing only values =12 though i see number of values here 
 # i am getting the below error 
 #Error in `$<-.data.frame`(`*tmp*`, No.of.trades.opened.in.last.6.months,  : 
-#                           replacement has 1 row, data has 0
+ #                           replacement has 1 row, data has 0
 
 #14.No.of.times.60.DPD.or.worse.in.last.12.months variable WOE analysis and mutation if required
 print(IV$Tables$No.of.times.60.DPD.or.worse.in.last.12.months,row.names=FALSE)
@@ -1751,10 +1751,10 @@ print(IV$Tables$  Profession,row.names=FALSE)
 # SE                        13835           0.199573       0.08717894    0.0019819216
 # SE_PROF                   16116           0.232477       -0.01328905 0.0020227280
 
-data1_credit_card_eda[(data1_credit_card_eda$Profession == "SAL"),]$Profession <- -0.02680598 
-data1_credit_card_eda[(data1_credit_card_eda$Profession == "SE" ),]$Profession <- 0.08717894    
-data1_credit_card_eda[(data1_credit_card_eda$Profession == "SE_PROF" ),]$Profession <- 0.232477    
-data1_credit_card_eda$Profession <- as.numeric(data1_credit_card_eda$Profession)
+data1_credit_card_eda[(data1_credit_card_eda$Profession == SAL),]$Profession <- -0.02680598 
+data1_credit_card_eda[(data1_credit_card_eda$Profession == SE ),]$Profession <- 0.08717894    
+data1_credit_card_eda[(data1_credit_card_eda$Profession == SE_PROF ),]$Profession <- 0.232477    
+
 # getting this error for all the below variables 
 #Error in `[.data.frame`(`*tmp*`, (data1_credit_card_eda$Profession ==  : 
 #object 'SE_PROF' not found#
@@ -1781,7 +1781,10 @@ print(IV$Tables$AgeCategory ,row.names=FALSE)
 data1_credit_card_eda[(data1_credit_card_eda$AgeCategory  ==Adults),]$AgeCategory <- 0.003911577 
 data1_credit_card_eda[(data1_credit_card_eda$AgeCategory == Seniors),]$AgeCategory <- -0.025015444 
 data1_credit_card_eda[(data1_credit_card_eda$AgeCategory == Youth ),]$AgeCategory <- -0.590204941
-data1_credit_card_eda$AgeCategory <- as.numeric(data1_credit_card_eda$AgeCategory)
+
+# getting the below error for all three categories 
+# Error in `[.data.frame`(`*tmp*`, (data1_credit_card_eda$AgeCategory ==  : 
+#                                     object 'Adults' not found
 
 ##24.Type.of.residence WOE analysis and mutation if required
 print(IV$Tables$Type.of.residence ,row.names=FALSE)
@@ -1794,12 +1797,15 @@ print(IV$Tables$Type.of.residence ,row.names=FALSE)
 # Rented                                    51890    0.74852502      -0.0031805681      0.0009113461
 
 #  Looks like we can combine company provided and Living with parents on the basis of  WOE values
-data1_credit_card_eda[(data1_credit_card_eda$Type.of.residence == "Company provided" ),]$Type.of.residence <-0.0765454687
-data1_credit_card_eda[(data1_credit_card_eda$Type.of.residence == "Living with Parents"  ),]$Type.of.residence <-0.0765454687
-data1_credit_card_eda[(data1_credit_card_eda$Type.of.residence == "Others"   ),]$Type.of.residence <- -0.5281807385
-data1_credit_card_eda[(data1_credit_card_eda$Type.of.residence == "Owned"   ),]$Type.of.residence <- -0.0007681379
-data1_credit_card_eda[(data1_credit_card_eda$Type.of.residence == "Rented"    ),]$Type.of.residence <- -0.0031805681
-data1_credit_card_eda$Type.of.residence <- as.numeric(data1_credit_card_eda$Type.of.residence)
+data1_credit_card_eda[(data1_credit_card_eda$Type.of.residence == Companyprovided ),]$Type.of.residence <-0.0765454687
+data1_credit_card_eda[(data1_credit_card_eda$Type.of.residence == LivingwithParents  ),]$Type.of.residence <-0.0765454687
+data1_credit_card_eda[(data1_credit_card_eda$Type.of.residence == Others   ),]$Type.of.residence <- -0.5281807385
+data1_credit_card_eda[(data1_credit_card_eda$Type.of.residence == Owned   ),]$Type.of.residence <- -0.0007681379
+data1_credit_card_eda[(data1_credit_card_eda$Type.of.residence == Rented    ),]$Type.of.residence <- -0.0031805681
+
+# getting the below error in all catrgories 
+# Error in `[.data.frame`(`*tmp*`, (data1_credit_card_eda$Type.of.residence ==  : 
+#                                     object 'Companyprovided' not found
 
 ##25.Education WOE analysis and mutation if required
 print(IV$Tables$Education ,row.names=FALSE)
@@ -1812,13 +1818,17 @@ print(IV$Tables$Education ,row.names=FALSE)
 # Professional                24219  0.349364569       -0.016781413    7.728863e-04
 
 
-data1_credit_card_eda[(data1_credit_card_eda$Education == "Bachelor"),]$Education <- 0.015453894
-data1_credit_card_eda[(data1_credit_card_eda$Education == "Masters"),]$Education <- 0.007524619
-data1_credit_card_eda[(data1_credit_card_eda$Education == "Others"),]$Education <- 0.507970381
-data1_credit_card_eda[(data1_credit_card_eda$Education == "Phd" ),]$Education <- -0.026487167
-data1_credit_card_eda[(data1_credit_card_eda$Education == "Professional"),]$Education <- -0.016781413
-data1_credit_card_eda$Education <- as.numeric(data1_credit_card_eda$Education)
+data1_credit_card_eda[(data1_credit_card_eda$Education == Bachelor),]$Education <- 0.015453894
+data1_credit_card_eda[(data1_credit_card_eda$Education == Masters),]$Education <- 0.007524619
+data1_credit_card_eda[(data1_credit_card_eda$Education == Others),]$Education <- 0.507970381
+data1_credit_card_eda[(data1_credit_card_eda$Education == Phd ),]$Education <- -0.026487167
+data1_credit_card_eda[(data1_credit_card_eda$Education == Professional),]$Education <- -0.016781413
+
 # GETTING the below error for all categories 
+
+# Error in `[.data.frame`(`*tmp*`, (data1_credit_card_eda$Education == Professional),  : 
+#                           object 'Professional' not found
+
 
 ##26.Gender WOE analysis and mutation if required
 print(IV$Tables$Gender ,row.names=FALSE)
@@ -1826,9 +1836,8 @@ print(IV$Tables$Gender ,row.names=FALSE)
 # F                             16393 0.2364727  0.03360694 0.000271225
 # M                             52930 0.7635273 -0.01062152 0.000356946
 
-data1_credit_card_eda[(data1_credit_card_eda$Gender == "F"),]$Gender <- 0.03360694
-data1_credit_card_eda[(data1_credit_card_eda$Gender == "M"),]$Gender <- -0.01062152
-data1_credit_card_eda$Gender <- as.numeric(data1_credit_card_eda$Gender)
+data1_credit_card_eda[(data1_credit_card_eda$Gender == F),]$Gender <- 0.03360694
+data1_credit_card_eda[(data1_credit_card_eda$Gender == M),]$Gender <- -0.01062152
 
 ##27.Gender Marital.Status analysis and mutation if required
 print(IV$Tables$Marital.Status ,row.names=FALSE)
@@ -1836,22 +1845,26 @@ print(IV$Tables$Marital.Status ,row.names=FALSE)
 # Marital.Status                 N   Percent          WOE           IV
 # Married                     59085 0.8523145 -0.004180567       1.486755e-05
 # Single                      10238 0.1476855  0.023819161       9.957677e-05
-data1_credit_card_eda[(data1_credit_card_eda$Marital.Status   == "Married" ),]$Marital.Status   <- -0.004180567 
-data1_credit_card_eda[(data1_credit_card_eda$Marital.Status   == "Single" ),]$Marital.Status   <- 0.023819161 
-data1_credit_card_eda$Marital.Status <- as.numeric(data1_credit_card_eda$Marital.Status)
-colnames(data1_credit_card_eda)
+
+
+data1_credit_card_eda[(data1_credit_card_eda$Marital.Status   == Married ),]$Marital.Status   <- -0.004180567 
+data1_credit_card_eda[(data1_credit_card_eda$Marital.Status   == Single ),]$Marital.Status   <- 0.023819161 
+
+# GETTING the below error 
+# Error in `[.data.frame`(`*tmp*`, (data1_credit_card_eda$Marital.Status ==  : 
+#                                     object 'Single' not found
+# 
 
 #--------------------------------------------------------------------
 # 4. Data Modeling - Logistic regression
 #--------------------------------------------------------------------
 
 # splitting the data between train and test
-#dummies<- data.frame(sapply(credit_card_fact, 
-#                            function(x) data.frame(model.matrix(~x-1,data =credit_card_fact))[,-1]))
-colnames(data1_credit_card_eda)
-#credit_card_regression <- cbind(credit_card_num_vars,dummies)
-credit_card_regression <- data1_credit_card_eda
-credit_card_regression$Performance.Tag <- as.factor(data1_credit_card_eda$Performance.Tag)
+dummies<- data.frame(sapply(credit_card_fact, 
+                            function(x) data.frame(model.matrix(~x-1,data =credit_card_fact))[,-1]))
+
+credit_card_regression <- cbind(credit_card_num_vars,dummies)
+credit_card_regression$Performance.Tag <- credit_card_eda$Performance.Tag
 
 set.seed(100)
 
@@ -1864,84 +1877,156 @@ test = credit_card_regression[!(indices),]
 model_1 = glm(Performance.Tag ~ ., data = train, family = "binomial")
 summary(model_1)
 # Stepwise selection
-#model_2<- stepAIC(model_1, direction="both")
-#summary(model_2)
+model_2<- stepAIC(model_1, direction="both")
+summary(model_2)
 # Removing multicollinearity through VIF check
-model_3 <- glm(Performance.Tag ~ Gender + No.of.dependents + No.of.months.in.current.company + 
-                 No.of.times.30.DPD.or.worse.in.last.12.months + Avgas.CC.Utilization.in.last.12.months + 
-                 No.of.trades.opened.in.last.12.months + No.of.PL.trades.opened.in.last.12.months + 
-                 No.of.Inquiries.in.last.6.months..excluding.home...auto.loans. + 
-                 No.of.Inquiries.in.last.12.months..excluding.home...auto.loans. + 
-                 Outstanding.Balance, family = "binomial", data = train)
+model_3 <- glm(Performance.Tag ~ No.of.PL.trades.opened.in.last.6.months + No.of.Inquiries.in.last.6.months + 
+                 Total.No.of.Trades + Income + No.of.months.in.current.residence + 
+                 No.of.months.in.current.company + Avgas.CC.Utilization.in.last.12.months + 
+                 No.of.PL.trades.opened.in.last.12.months + No.of.Inquiries.in.last.12.months + 
+                 Outstanding.Balance + No.of.times.30.DPD.or.worse.in.last.6.months + 
+                 No.of.times.60.DPD.or.worse.in.last.6.months + No.of.times.90.DPD.or.worse.in.last.12.months + 
+                 Gender + No.of.dependents.x2 + Type.of.residence.xOwned + 
+                 Type.of.residence.xRented + Profession.xSE, family = "binomial", data = train)
 summary(model_3)
 vif(model_3)
 
-# Remove No.of.depenNo.of.Inquiries.in.last.6.months..excluding.home...auto.loans.dents.x2
-model_4 <- glm(Performance.Tag ~ Gender + No.of.dependents + No.of.months.in.current.company + 
-                 No.of.times.30.DPD.or.worse.in.last.12.months + Avgas.CC.Utilization.in.last.12.months + 
-                 No.of.trades.opened.in.last.12.months + No.of.PL.trades.opened.in.last.12.months + 
-                 No.of.Inquiries.in.last.12.months..excluding.home...auto.loans. + 
-                 Outstanding.Balance, family = "binomial", data = train)
+# Remove No.of.dependents.x2
+model_4 <- glm(Performance.Tag ~ No.of.PL.trades.opened.in.last.6.months + No.of.Inquiries.in.last.6.months + 
+                 Total.No.of.Trades + Income + No.of.months.in.current.residence + 
+                 No.of.months.in.current.company + Avgas.CC.Utilization.in.last.12.months + 
+                 No.of.PL.trades.opened.in.last.12.months + No.of.Inquiries.in.last.12.months + 
+                 Outstanding.Balance + No.of.times.30.DPD.or.worse.in.last.6.months + 
+                 No.of.times.60.DPD.or.worse.in.last.6.months + No.of.times.90.DPD.or.worse.in.last.12.months + 
+                 Gender + Type.of.residence.xOwned + 
+                 Type.of.residence.xRented + Profession.xSE, family = "binomial", data = train)
 summary(model_4)
 vif(model_4)
 
-#Remove Outstanding.Balance
-model_5 <- glm(Performance.Tag ~ Gender + No.of.dependents + No.of.months.in.current.company + 
-                 No.of.times.30.DPD.or.worse.in.last.12.months + Avgas.CC.Utilization.in.last.12.months + 
-                 No.of.trades.opened.in.last.12.months + No.of.PL.trades.opened.in.last.12.months + 
-                 No.of.Inquiries.in.last.12.months..excluding.home...auto.loans. 
-                 , family = "binomial", data = train)
+#Remove No.of.times.60.DPD.or.worse.in.last.6.months - high vif
+model_5 <- glm(Performance.Tag ~ No.of.PL.trades.opened.in.last.6.months + No.of.Inquiries.in.last.6.months + 
+                 Total.No.of.Trades + Income + No.of.months.in.current.residence + 
+                 No.of.months.in.current.company + Avgas.CC.Utilization.in.last.12.months + 
+                 No.of.PL.trades.opened.in.last.12.months + No.of.Inquiries.in.last.12.months + 
+                 Outstanding.Balance + No.of.times.30.DPD.or.worse.in.last.6.months + 
+                 No.of.times.90.DPD.or.worse.in.last.12.months + 
+                 Gender + Type.of.residence.xOwned + 
+                 Type.of.residence.xRented + Profession.xSE, family = "binomial", data = train)
 summary(model_5)
 vif(model_5)
 
-# Remove Gender
-model_6 <- glm(Performance.Tag ~ No.of.dependents + No.of.months.in.current.company + 
-                 No.of.times.30.DPD.or.worse.in.last.12.months + Avgas.CC.Utilization.in.last.12.months + 
-                 No.of.trades.opened.in.last.12.months + No.of.PL.trades.opened.in.last.12.months + 
-                 No.of.Inquiries.in.last.12.months..excluding.home...auto.loans. 
-               , family = "binomial", data = train)
+# Remove Type.of.residence.xRented
+model_6 <- glm(Performance.Tag ~ No.of.PL.trades.opened.in.last.6.months + No.of.Inquiries.in.last.6.months + 
+                 Total.No.of.Trades + Income + No.of.months.in.current.residence + 
+                 No.of.months.in.current.company + Avgas.CC.Utilization.in.last.12.months + 
+                 No.of.PL.trades.opened.in.last.12.months + No.of.Inquiries.in.last.12.months + 
+                 Outstanding.Balance + No.of.times.30.DPD.or.worse.in.last.6.months + 
+                 No.of.times.90.DPD.or.worse.in.last.12.months + 
+                 Gender + Type.of.residence.xOwned + 
+                 Profession.xSE, family = "binomial", data = train)
 summary(model_6)
 vif(model_6)
 
-# Remove No.of.months.in.current.company 
-model_7 <- glm(Performance.Tag ~ No.of.dependents + 
-                 No.of.times.30.DPD.or.worse.in.last.12.months + Avgas.CC.Utilization.in.last.12.months + 
-                 No.of.trades.opened.in.last.12.months + No.of.PL.trades.opened.in.last.12.months + 
-                 No.of.Inquiries.in.last.12.months..excluding.home...auto.loans. 
-               , family = "binomial", data = train)
+# Remove Type.of.residence.xOwned
+model_7 <- glm(Performance.Tag ~ No.of.PL.trades.opened.in.last.6.months + No.of.Inquiries.in.last.6.months + 
+                 Total.No.of.Trades + Income + No.of.months.in.current.residence + 
+                 No.of.months.in.current.company + Avgas.CC.Utilization.in.last.12.months + 
+                 No.of.PL.trades.opened.in.last.12.months + No.of.Inquiries.in.last.12.months + 
+                 Outstanding.Balance + No.of.times.30.DPD.or.worse.in.last.6.months + 
+                 No.of.times.90.DPD.or.worse.in.last.12.months + 
+                 Gender + Profession.xSE, family = "binomial", data = train)
 summary(model_7)
 vif(model_7)
 
-#Remove No.of.dependents
-model_8 <- glm(Performance.Tag ~ No.of.times.30.DPD.or.worse.in.last.12.months + 
-                 Avgas.CC.Utilization.in.last.12.months + 
-                 No.of.trades.opened.in.last.12.months + No.of.PL.trades.opened.in.last.12.months + 
-                 No.of.Inquiries.in.last.12.months..excluding.home...auto.loans. 
-               , family = "binomial", data = train)
+#Remove Profession.xSE
+model_8 <- glm(Performance.Tag ~ No.of.PL.trades.opened.in.last.6.months + No.of.Inquiries.in.last.6.months + 
+                 Total.No.of.Trades + Income + No.of.months.in.current.residence + 
+                 No.of.months.in.current.company + Avgas.CC.Utilization.in.last.12.months + 
+                 No.of.PL.trades.opened.in.last.12.months + No.of.Inquiries.in.last.12.months + 
+                 Outstanding.Balance + No.of.times.30.DPD.or.worse.in.last.6.months + 
+                 No.of.times.90.DPD.or.worse.in.last.12.months + 
+                 Gender, family = "binomial", data = train)
 summary(model_8)
 vif(model_8)
 
-# Remove No.of.PL.trades.opened.in.last.12.months
-model_9 <- glm(Performance.Tag ~ No.of.times.30.DPD.or.worse.in.last.12.months + 
-                 Avgas.CC.Utilization.in.last.12.months + 
-                 No.of.trades.opened.in.last.12.months +  
-                 No.of.Inquiries.in.last.12.months..excluding.home...auto.loans. 
-               , family = "binomial", data = train)
+# Remove Gender
+model_9 <- glm(Performance.Tag ~ No.of.PL.trades.opened.in.last.6.months + No.of.Inquiries.in.last.6.months + 
+                 Total.No.of.Trades + Income + No.of.months.in.current.residence + 
+                 No.of.months.in.current.company + Avgas.CC.Utilization.in.last.12.months + 
+                 No.of.PL.trades.opened.in.last.12.months + No.of.Inquiries.in.last.12.months + 
+                 Outstanding.Balance + No.of.times.30.DPD.or.worse.in.last.6.months + 
+                 No.of.times.90.DPD.or.worse.in.last.12.months 
+                 , family = "binomial", data = train)
 summary(model_9)
 vif(model_9)
 
-#Remove No.of.trades.opened.in.last.12.months
-model_10 <- glm(Performance.Tag ~ No.of.times.30.DPD.or.worse.in.last.12.months + 
-                  Avgas.CC.Utilization.in.last.12.months + 
-                  No.of.Inquiries.in.last.12.months..excluding.home...auto.loans. 
-                , family = "binomial", data = train)
+#Remove No.of.PL.trades.opened.in.last.6.months
+model_10 <- glm(Performance.Tag ~ No.of.PL.trades.opened.in.last.6.months + No.of.Inquiries.in.last.6.months + 
+                  Total.No.of.Trades + Income + No.of.months.in.current.residence + 
+                  No.of.months.in.current.company + Avgas.CC.Utilization.in.last.12.months + 
+                  No.of.PL.trades.opened.in.last.12.months + No.of.Inquiries.in.last.12.months + 
+                  Outstanding.Balance + No.of.times.30.DPD.or.worse.in.last.6.months + 
+                  No.of.times.90.DPD.or.worse.in.last.12.months, family = "binomial", data = train)
 summary(model_10)
 vif(model_10)
 
+# Remove No.of.PL.trades.opened.in.last.6.months
+model_11 <- glm(Performance.Tag ~ No.of.Inquiries.in.last.6.months + 
+                  Total.No.of.Trades + Income + No.of.months.in.current.residence + 
+                  No.of.months.in.current.company + Avgas.CC.Utilization.in.last.12.months + 
+                  No.of.PL.trades.opened.in.last.12.months + No.of.Inquiries.in.last.12.months + 
+                  Outstanding.Balance + No.of.times.30.DPD.or.worse.in.last.6.months + 
+                  No.of.times.90.DPD.or.worse.in.last.12.months, family = "binomial", data = train)
+summary(model_11)
+vif(model_11)
 
-final_model<- model_10
+#Remove No.of.Inquiries.in.last.6.months
+model_11 <- glm(Performance.Tag ~ Total.No.of.Trades + Income + No.of.months.in.current.residence + 
+                  No.of.months.in.current.company + Avgas.CC.Utilization.in.last.12.months + 
+                  No.of.PL.trades.opened.in.last.12.months + No.of.Inquiries.in.last.12.months + 
+                  Outstanding.Balance + No.of.times.30.DPD.or.worse.in.last.6.months + 
+                  No.of.times.90.DPD.or.worse.in.last.12.months, family = "binomial", data = train)
+summary(model_11)
+vif(model_11)
+
+#Remove Outstanding.Balance
+model_12 <- glm(Performance.Tag ~ Total.No.of.Trades + Income + No.of.months.in.current.residence + 
+                  No.of.months.in.current.company + Avgas.CC.Utilization.in.last.12.months + 
+                  No.of.PL.trades.opened.in.last.12.months + No.of.Inquiries.in.last.12.months + 
+                  No.of.times.30.DPD.or.worse.in.last.6.months + 
+                  No.of.times.90.DPD.or.worse.in.last.12.months , family = "binomial", data = train)
+summary(model_12)
+vif(model_12)
+
+# Remove Total.No.of.Trades
+model_13 <- glm(Performance.Tag ~ Income + No.of.months.in.current.residence + 
+                  No.of.months.in.current.company + Avgas.CC.Utilization.in.last.12.months + 
+                  No.of.PL.trades.opened.in.last.12.months + No.of.Inquiries.in.last.12.months + 
+                  No.of.times.30.DPD.or.worse.in.last.6.months + 
+                  No.of.times.90.DPD.or.worse.in.last.12.months, family = "binomial", data = train)
+summary(model_13)
+vif(model_13)
+
+#Remove No.of.months.in.current.residence
+model_14 <- glm(Performance.Tag ~ Income +  
+                  No.of.months.in.current.company + Avgas.CC.Utilization.in.last.12.months + 
+                  No.of.PL.trades.opened.in.last.12.months + No.of.Inquiries.in.last.12.months + 
+                  No.of.times.30.DPD.or.worse.in.last.6.months + 
+                  No.of.times.90.DPD.or.worse.in.last.12.months, family = "binomial", data = train)
+summary(model_14)
+vif(model_14)
+
+# Remove No.of.times.90.DPD.or.worse.in.last.12.months
+model_15 <- glm(Performance.Tag ~ Income +  
+                  No.of.months.in.current.company + Avgas.CC.Utilization.in.last.12.months + 
+                  No.of.PL.trades.opened.in.last.12.months + No.of.Inquiries.in.last.12.months + 
+                  No.of.times.30.DPD.or.worse.in.last.6.months , family = "binomial", data = train)
+summary(model_15)
+vif(model_15)
+
+final_model<- model_15
 summary(final_model)
-
+#######################################################################
 ### Model Evaluation
 ### Test Data ####
 
@@ -1960,15 +2045,19 @@ test$prob <- test_pred
 
 # Let's use the probability cutoff of 50%.
 
-test_pred_default <- factor(ifelse(test_pred >= 0.50, "Yes", "No"))
-test_actual_default <- factor(ifelse(test$Performance.Tag==1,"Yes","No"))
-table(test_actual_default,test_pred_default)
+test_pred_attrition <- factor(ifelse(test_pred >= 0.50, "Yes", "No"))
+test_actual_attrition <- factor(ifelse(test$Performance.Tag==1,"Yes","No"))
 
-test_pred_default <- factor(ifelse(test_pred >= 0.40, "Yes", "No"))
+table(test_actual_attrition,test_pred_attrition)
 
-test_conf <- confusionMatrix(test_pred_default, test_actual_default, positive = "Yes")
+#######################################################################
+test_pred_attrition <- factor(ifelse(test_pred >= 0.40, "Yes", "No"))
+
+test_conf <- confusionMatrix(test_pred_attrition, test_actual_attrition, positive = "Yes")
 test_conf
+#######################################################################
 
+#########################################################################################
 # Let's Choose the cutoff value. 
 # 
 # Let's find out the optimal probalility cutoff 
@@ -1976,7 +2065,7 @@ test_conf
 perform_fn <- function(cutoff) 
 {
   predicted_attrition <- factor(ifelse(test_pred >= cutoff, "Yes", "No"))
-  conf <- confusionMatrix(predicted_attrition, test_actual_default, positive = "Yes")
+  conf <- confusionMatrix(predicted_attrition, test_actual_attrition, positive = "Yes")
   acc <- conf$overall[1]
   sens <- conf$byClass[1]
   spec <- conf$byClass[2]
@@ -2009,7 +2098,7 @@ box()
 legend(0,.50,col=c(2,"darkgreen",4,"darkred"),lwd=c(2,2,2,2),c("Sensitivity","Specificity","Accuracy"))
 
 min(abs(OUT[,1]-OUT[,2]))
-cutoff <- s[which(abs(OUT[,1]-OUT[,2])<=0.03)]
+cutoff <- s[which(abs(OUT[,1]-OUT[,2])<=0.01)]
 
 print(cutoff)
 
@@ -2017,9 +2106,9 @@ print(cutoff)
 
 # Let's choose a cutoff value of 0.05 for final model
 
-test_cutoff_default <- factor(ifelse(test_pred >=0.049, "Yes", "No"))
+test_cutoff_attrition <- factor(ifelse(test_pred >=0.05, "Yes", "No"))
 
-conf_final <- confusionMatrix(test_cutoff_default, test_actual_default, positive = "Yes")
+conf_final <- confusionMatrix(test_cutoff_attrition, test_actual_attrition, positive = "Yes")
 
 acc <- conf_final$overall[1]
 sens <- conf_final$byClass[1]
@@ -2027,53 +2116,6 @@ spec <- conf_final$byClass[2]
 acc
 sens
 spec
-
-test_cutoff_default <- ifelse(test_cutoff_default=="Yes",1,0)
-test_actual_default <- ifelse(test_actual_default=="Yes",1,0)
-summary(test_actual_default)
-pred_object_test<- prediction(test_cutoff_default, test_actual_default)
-
-performance_measures_test<- performance(pred_object_test, "tpr", "fpr")
-
-ks_table_test <- attr(performance_measures_test, "y.values")[[1]] - 
-  (attr(performance_measures_test, "x.values")[[1]])
-
-max(ks_table_test)
-
-#plot ROC 
-# ROC curves
-plot(performance_measures_test, main = "ROC curve for Employee Attrition",  colorize=T, lwd = 3)
-
-#plot ROC chart using pROC package as it gives the better visualization
-glm_link_scores <- predict(final_model,  test[,-1], type="link")
-glm_response_scores <- predict(final_model,  test[,-1], type="response")
-
-plot(roc(test$Attrition, glm_response_scores, direction="<"),
-     col="green", lwd=3, main="ROC curve of Employee Attrition")
-
-####################################################################
-# Lift & Gain Chart 
-
-# plotting the lift chart
-
-lift <- function(labels , predicted_prob,groups=10) {
-  
-  if(is.factor(labels)) labels  <- as.integer(as.character(labels ))
-  if(is.factor(predicted_prob)) predicted_prob <- as.integer(as.character(predicted_prob))
-  helper = data.frame(cbind(labels , predicted_prob))
-  helper[,"bucket"] = ntile(-helper[,"predicted_prob"], groups)
-  gaintable = helper %>% group_by(bucket)  %>%
-    summarise_at(vars(labels ), funs(total = n(),
-                                     totalresp=sum(., na.rm = TRUE))) %>%
-    
-    mutate(Cumresp = cumsum(totalresp),
-           Gain=Cumresp/sum(totalresp)*100,
-           Cumlift=Gain/(bucket*(100/groups))) 
-  return(gaintable)
-}
-
-Attrition_decile = lift(test_actual_attrition, test_pred, groups = 10)
-
 
 
 #-------------------------------
