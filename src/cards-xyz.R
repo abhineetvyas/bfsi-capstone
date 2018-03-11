@@ -2147,12 +2147,90 @@ colnames(conf.matrix) <- paste("Pred", colnames(conf.matrix), sep = ":")
 print(conf.matrix)
 
 
-# Build the random forest
+# Package required for randomForest algorithm is:
+# install randomForest
 library(randomForest)
-set.seed(71)
-sapply(train_dt, class)
-data.rf <- randomForest(Performance.Tag ~ ., data=train_dt, proximity=FALSE,
-                        ntree=100, mtry=5, do.trace=TRUE, na.action=na.omit)
-data.rf
-testPred <- predict(data.rf, newdata=test_dt)
-table(testPred, test_dt$Performance.Tag)
+#---------------------------------------------------------    
+
+# Spliting the bank data in 70:30 ratio
+
+set.seed(101)
+Credit_card_RM <- Credit_card_DT
+Credit_card_RM$Performance.Tag <- as.factor(ifelse(Credit_card_RM$Performance.Tag==1,"yes","no"))
+split_indices <- sample.split(Credit_card_RM$Performance.Tag, SplitRatio = 0.70)
+train_rf <- Credit_card_RM[split_indices, ]
+test_rf <- Credit_card_RM[!split_indices, ]
+
+#---------------------------------------------------------    
+
+# Building the model 
+
+creditcard_rf <- randomForest(Performance.Tag ~., data = train_rf, proximity = F, do.trace = T, mtry = 5)
+
+# Predict response for test data
+
+rf_pred <- predict(creditcard_rf, test_rf[, -27], type = "prob")
+
+#---------------------------------------------------------    
+
+# Cutoff for randomforest to assign yes or no
+
+perform_fn_rf <- function(cutoff) 
+{
+  predicted_response <- as.factor(ifelse(rf_pred[, 2] >= cutoff, "yes", "no"))
+  conf <- confusionMatrix(predicted_response, test_rf$Performance.Tag, positive = "yes")
+  acc <- conf$overall[1]
+  sens <- conf$byClass[1]
+  spec <- conf$byClass[2]
+  OUT_rf <- t(as.matrix(c(sens, spec, acc))) 
+  colnames(OUT_rf) <- c("sensitivity", "specificity", "accuracy")
+  return(OUT_rf)
+}
+
+# creating cutoff values from 0.01 to 0.99 for plotting and initialising a matrix of size 1000x4
+s = seq(.01,.99,length=100)
+
+OUT_rf = matrix(0,100,3)
+
+# calculate the sens, spec and acc for different cutoff values
+
+for(i in 1:100)
+{
+  OUT_rf[i,] = perform_fn_rf(s[i])
+} 
+
+# plotting cutoffs
+
+plot(s, OUT_rf[,1],xlab="Cutoff",ylab="Value",cex.lab=1.5,cex.axis=1.5,ylim=c(0,1),type="l",lwd=2,axes=FALSE,col=2)
+axis(1,seq(0,1,length=5),seq(0,1,length=5),cex.lab=1.5)
+axis(2,seq(0,1,length=5),seq(0,1,length=5),cex.lab=1.5)
+lines(s,OUT_rf[,2],col="darkgreen",lwd=2)
+lines(s,OUT_rf[,3],col=4,lwd=2)
+box()
+
+legend(0,.50,col=c(2,"darkgreen",4,"darkred"),lwd=c(2,2,2,2),c("Sensitivity","Specificity","Accuracy"))
+min(abs(OUT_rf[,1]-OUT_rf[,2]))
+cutoff_rf <- s[which(abs(OUT_rf[,1]-OUT_rf[,2])<=0.038)]
+
+# The plot shows that cutoff value of around 05% optimises sensitivity and accuracy
+
+predicted_response <- factor(ifelse(rf_pred[, 2] >= 0.052, "yes", "no"))
+
+conf_forest <- confusionMatrix(predicted_response, test_rf[, 27], positive = "yes")
+
+conf_forest
+
+# Sensitivity
+conf_forest$byClass[1]
+
+# Specificity 
+conf_forest$byClass[2]
+
+# Accuracy 
+conf_forest$overall[1]
+
+
+# Final RF important variables
+importance <- creditcard_rf$importance 
+
+importance <- data.frame(importance)
