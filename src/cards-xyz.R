@@ -2090,33 +2090,50 @@ library(rpart.plot)
 
 Credit_card_DT <- credit_card_eda[, -which(names(credit_card_eda) %in% c("IncomeRange", "Residence.Years", "Company.Years", "x_Avgas.CC.Utilization.in.last.12.months" ))]
 
-# Let's split the data in training and test datasets. 
+#Credit_card_DT$Gender <- as.factor(Credit_card_DT$Gender)
+#Credit_card_DT$Education <- as.factor(Credit_card_DT$Education)
+#Credit_card_DT$AgeCategory <- as.factor(Credit_card_DT$AgeCategory)
 
-set.seed(100)
+
+# Let's split the data in training and test datasets.
+
 split_indices <- sample.split(Credit_card_DT$Performance.Tag, SplitRatio = 0.70)
-
 train_dt <- Credit_card_DT[split_indices, ]
-
 test_dt <- Credit_card_DT[!split_indices, ]
 
-nrow(train_dt)/nrow(Credit_card_DT)
-
-nrow(test_dt)/nrow(Credit_card_DT)
 
 
 # building a tree with arbitrary minsplit and cp
 colnames(train_dt)
 #credit_card_1 <-  rpart(Performance.Tag ~ .,data=train_dt, method= "class")
-summary(train_dt$Performance.Tag)
-tree.model <- rpart(formula=Performance.Tag ~ .,                                # formula
-                    data = train_dt,                             # training data
-                    method = "class",                         # classification or regression
-                    control = rpart.control(minsplit = 2,  # min observations for node
-                                            minbucket = 1, # min observations for leaf node
-                                            cp = 0.001))       # complexity parameter
-rpart(formula=fm.pipe, data=Data, 
-      control=rpart.control(minsplit=1, minbucket=1, cp=0.001))
 
+#train_dt$Performance.Tag <- as.numeric(levels(train_dt$Performance.Tag))[train_dt$Performance.Tag]
+
+sapply(train_dt, class)
+
+tree.model <- rpart(formula = Performance.Tag ~  ., data = train_dt, control = rpart.control(cp = 1e-04))
+
+bestcp <- tree.model$cptable[which.min(tree.model$cptable[,"xerror"]),"CP"]
+
+#tree pruning using the best CP
+tree.model <- rpart(formula = Performance.Tag ~  ., data = train_dt, control = rpart.control(cp = bestcp))
+tree.pruned <- prune(tree.model, cp = bestcp)
+
+
+
+
+# confusion matrix (training data)
+# conf.matrix <- table(train_dt$Performance.Tag, predict(tree.pruned))
+# rownames(conf.matrix) <- paste("Actual", rownames(conf.matrix), sep = ":")
+# colnames(conf.matrix) <- paste("Pred", colnames(conf.matrix), sep = ":")
+# print(conf.matrix)
+
+# make predictions on the test set
+tree.predict <- predict(tree.model, test_dt, type = "class")
+# evaluate the results
+confusionMatrix(test_dt$Performance.Tag, tree.predict, positive = "1")  # 0.8076
+
+sapply(test_dt, class)
 tree.predict <- predict(tree.model, test_dt, type = "class")
 printcp(tree.model)
 prp(tree.model)
