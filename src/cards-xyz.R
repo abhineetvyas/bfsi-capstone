@@ -2090,30 +2090,61 @@ library(rpart.plot)
 
 Credit_card_DT <- credit_card_eda[, -which(names(credit_card_eda) %in% c("IncomeRange", "Residence.Years", "Company.Years", "x_Avgas.CC.Utilization.in.last.12.months" ))]
 
-#Credit_card_DT$Gender <- as.factor(Credit_card_DT$Gender)
-#Credit_card_DT$Education <- as.factor(Credit_card_DT$Education)
-#Credit_card_DT$AgeCategory <- as.factor(Credit_card_DT$AgeCategory)
-
-
 # Let's split the data in training and test datasets.
 
 split_indices <- sample.split(Credit_card_DT$Performance.Tag, SplitRatio = 0.70)
 train_dt <- Credit_card_DT[split_indices, ]
 test_dt <- Credit_card_DT[!split_indices, ]
 
-
-
 # building a tree with arbitrary minsplit and cp
-colnames(train_dt)
-#credit_card_1 <-  rpart(Performance.Tag ~ .,data=train_dt, method= "class")
-
-#train_dt$Performance.Tag <- as.numeric(levels(train_dt$Performance.Tag))[train_dt$Performance.Tag]
-
-sapply(train_dt, class)
 
 tree.model <- rpart(formula = Performance.Tag ~  ., data = train_dt, control = rpart.control(cp = 1e-04))
 
 bestcp <- tree.model$cptable[which.min(tree.model$cptable[,"xerror"]),"CP"]
+
+#Cross test to choose CP ------------------------------------------------------------
+library(caret)
+
+# set the number of folds in cross test to 5
+tree.control = trainControl(method = "cv", number = 5)
+
+# set the search space for CP
+tree.grid = expand.grid(cp = seq(0, 0.02, 0.0025))
+
+# train model
+tree.model <- train(Performance.Tag ~ .,
+                    data = train_dt ,
+                    method = "rpart",
+                    metric = "Accuracy",
+                    trControl = tree.control,
+                    tuneGrid = tree.grid,
+                    control = rpart.control(minsplit = 50,
+                                            minbucket = 20))
+
+# look at cross validated model results
+tree.model
+
+# look at best value of hyperparameter
+tree.model$bestTune
+
+#tree.model <- rpart(formula = Performance.Tag ~  ., data = train_dt, control = rpart.control(cp = 0.02))
+
+# make predictions on test set
+tree.predict <- predict.train(tree.model, test_dt)
+
+# accuracy
+confusionMatrix(tree.predict, test_dt$Performance.Tag)  
+
+# plot CP vs Accuracy
+library(ggplot2)
+accuracy_graph <- data.frame(tree.model$results)
+ggplot(data = accuracy_graph, aes(x = cp, y = Accuracy*100)) +
+  geom_line() +
+  geom_point() +
+  labs(x = "Complexity Parameter (CP)", y = "Accuracy", title = "CP vs Accuracy")
+
+
+
 
 #tree pruning using the best CP
 tree.model <- rpart(formula = Performance.Tag ~  ., data = train_dt, control = rpart.control(cp = bestcp))
