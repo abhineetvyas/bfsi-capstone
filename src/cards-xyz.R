@@ -2156,3 +2156,17 @@ data.rf <- randomForest(Performance.Tag ~ ., data=train_dt, proximity=FALSE,
 data.rf
 testPred <- predict(data.rf, newdata=test_dt)
 table(testPred, test_dt$Performance.Tag)
+
+confusionMatrix(testPred, test_dt$Performance.Tag )
+
+OOB.votes <- predict (data.rf,test_dt,type="prob")
+OOB.pred <- OOB.votes[,2]
+
+pred.obj <- prediction (OOB.pred,test_dt$Performance.Tag)
+
+RP.perf <- performance(pred.obj, "rec","prec")
+plot (RP.perf)
+
+ROC.perf <- performance(pred.obj, "fpr","tpr")
+plot (ROC.perf)
+
