@@ -2100,6 +2100,9 @@ numericcols <- c( "No.of.dependents" ,"Income" ,"No.of.months.in.current.residen
                   "No.of.PL.trades.opened.in.last.12.months" , "No.of.Inquiries.in.last.6.months..excluding.home...auto.loans." ,
                   "No.of.Inquiries.in.last.12.months..excluding.home...auto.loans.", "Outstanding.Balance"     ,                                       
                   "Total.No.of.Trades" )
+
+
+
 factorcols <- c("Gender" ,"Marital.Status", "Education", "Profession", "Type.of.residence", 
                 "Presence.of.open.auto.loan" ,"Presence.of.open.home.loan" , "AgeCategory" )
 
@@ -2109,96 +2112,39 @@ Credit_card_DT[, factorcols] <- lapply(factorcols, function(x) as.factor(as.char
 write.csv(Credit_card_DT, "Credit_card_DT.csv")
 # Let's split the data in training and test datasets.
 
+str(Credit_card_DT)
 split_indices <- sample.split(Credit_card_DT$Performance.Tag, SplitRatio = 0.70)
 train_dt <- Credit_card_DT[split_indices, ]
 test_dt <- Credit_card_DT[!split_indices, ]
 
-# building a tree with arbitrary cp
+set.seed(3033)
+split_indices <- createDataPartition(y = Credit_card_DT$Performance.Tag, p= 0.7, list = FALSE)
+train_dt <- Credit_card_DT[split_indices,]
+test_dt <- Credit_card_DT[-split_indices,]
+anyNA(Credit_card_DT)
 
-tree.model1 <-  rpart(Performance.Tag ~ ., data=train_dt, method= "class", 
-                     control=rpart.control( minsplit=10,cp=0.0001))
-plot(tree.model1)
+trctrl <- trainControl(method = "repeatedcv", number = 10, repeats = 3)
+set.seed(3333)
+dtree_fit <- train(Performance.Tag ~ ., data = train_dt, method = "rpart",
+                   parms = list(split = "information"),
+                   trControl=trctrl,
+                   tuneLength = 10)
+dtree_fit
 
-# Increasing the minsplit two fold to 20 
-tree.model2 <-  rpart(Performance.Tag ~ ., data=train_dt, method= "class", 
-                      control=rpart.control(minsplit=20, cp=0.0001))
+#Plot Decision Tree
+prp(dtree_fit$finalModel, box.palette = "Reds", tweak = 1.2)
+dtree_fit$finalModel$variable.importance
 
-plot(tree.model2)
+test_pred <- predict(dtree_fit, newdata = test_dt)
+confusionMatrix(test_pred, test_dt$Performance.Tag )  #check accuracy
 
-tree.model2$variable.importance
-
-# We can further simplify the tree by increasing minsplit
-tree.model3 <-  rpart(Performance.Tag ~ ., data=train_dt, method= "class", 
-                      control=rpart.control(minsplit=30, minbucket = 15, cp=0.0001))
-
-tree.model3$variable.importance
-plot(tree.model3)
-
-
-## Model Evaluation for tree.model3
-# using test data from now on
-# tree.model3
-test_dt <- Credit_card_DT[!split_indices, ]
-tree.model3_pred <- predict(tree.model3, test_dt[, -27], type = "class")
-
-tree.model3_pred <- ifelse(tree.model3_pred==1,"yes","no")
-test_dt$Performance.Tag <-ifelse(test_dt$Performance.Tag==1,"yes","no")
-
-confusionMatrix(tree.model3_pred, test_dt[, 27], positive = "yes")
-tree.pruned <- prune(tree.model3_pred, cp = bestcp)
-#Cross test to choose CP ------------------------------------------------------------
-
-# set the number of folds in cross test to 5
-tree.control = trainControl(method = "cv", number = 5)
-
-# set the search space for CP
-tree.grid = expand.grid(cp = seq(0, 0.02, 0.0001))
-
-# train model
-tree.model <- train(Performance.Tag ~ .,
-                    data = train_dt ,
-                    method = "rpart",
-                    metric = "Accuracy",
-                    trControl = tree.control,
-                    tuneGrid = tree.grid,
-                    control = rpart.control(minsplit = 50,
-                                            minbucket = 20))
-
-# look at cross validated model results
-tree.model
-
-# look at best value of hyperparameter
-tree.model$bestTune
-
-# make predictions on test set
-tree.predict <- predict.train(tree.model, test_dt)
-
-# accuracy
-confusionMatrix(tree.predict, test_dt$Performance.Tag)  
-
-# plot CP vs Accuracy
-library(ggplot2)
-accuracy_graph <- data.frame(tree.model$results)
-ggplot(data = accuracy_graph, aes(x = cp, y = Accuracy*100)) +
-  geom_line() +
-  geom_point() +
-  labs(x = "Complexity Parameter (CP)", y = "Accuracy", title = "CP vs Accuracy")
-
-
-#tree pruning using the best CP
-tree.model <- rpart(formula = Performance.Tag ~  ., data = train_dt, control = rpart.control(cp = bestcp))
-tree.pruned <- prune(tree.model, cp = bestcp)
-
-# make predictions on the test set
-tree.predict <- predict(tree.model, test_dt, type = "class")
-# evaluate the results
-confusionMatrix(test_dt$Performance.Tag, tree.predict, positive = "1")  # 0.8076
-
-sapply(test_dt, class)
-tree.predict <- predict(tree.model, test_dt, type = "class")
-printcp(tree.model)
-prp(tree.model)
-str(train_dt)
+#Prune the tree using the best cp.
+tree.pruned <- prune(dtree_fit$finalModel, cp = 0.000324728)
+prp(tree.pruned, box.palette = "Reds", tweak = 1.2)
+conf.matrix <- table(train_dt$Performance.Tag, predict(tree.pruned,type="class"))
+rownames(conf.matrix) <- paste("Actual", rownames(conf.matrix), sep = ":")
+colnames(conf.matrix) <- paste("Pred", colnames(conf.matrix), sep = ":")
+print(conf.matrix)
 
 
 # Build the random forest
