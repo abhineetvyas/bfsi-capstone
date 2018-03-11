@@ -24,6 +24,8 @@ library(dplyr)
 library(magrittr)
 library(knitr)
 library(data.table)
+library(ROCR)
+library(pROC) 
 
 #-------------------------------------------------------
 #Synopsis:
@@ -35,9 +37,9 @@ library(data.table)
 #  card companies earn more money the more customers they have, and are always looking for more
 #  people to use their services.
 
-#-------------------------------------------------------
+#------------------------------------------------------------------------
 #Business Objective: Delinquent vs default customers  [problem statement]
-#-------------------------------------------------------
+#------------------------------------------------------------------------
 #  As We are that credit X it has experienced an increase in credit loss. The CEO believes that
 #  the best strategy to mitigate credit risk is to 'acquire the right customers'.
 #  Help CredX identify right applicants to provide credit cards to by using predictive models i.e. 
@@ -2031,6 +2033,7 @@ spec
 test_cutoff_default <- ifelse(test_cutoff_default=="Yes",1,0)
 test_actual_default <- ifelse(test_actual_default=="Yes",1,0)
 summary(test_actual_default)
+
 pred_object_test<- prediction(test_cutoff_default, test_actual_default)
 
 performance_measures_test<- performance(pred_object_test, "tpr", "fpr")
@@ -2048,12 +2051,11 @@ plot(performance_measures_test, main = "ROC curve for Employee Attrition",  colo
 glm_link_scores <- predict(final_model,  test[,-1], type="link")
 glm_response_scores <- predict(final_model,  test[,-1], type="response")
 
-plot(roc(test$Attrition, glm_response_scores, direction="<"),
+plot(roc(test$Performance.Tag, glm_response_scores, direction="<"),
      col="green", lwd=3, main="ROC curve of Employee Attrition")
 
-####################################################################
-# Lift & Gain Chart 
 
+# Lift & Gain Chart 
 # plotting the lift chart
 
 lift <- function(labels , predicted_prob,groups=10) {
@@ -2072,40 +2074,50 @@ lift <- function(labels , predicted_prob,groups=10) {
   return(gaintable)
 }
 
-Attrition_decile = lift(test_actual_attrition, test_pred, groups = 10)
+Attrition_decile = lift(test_actual_default, test_pred, groups = 10)
 
-
+Attrition_decile
 
 #-------------------------------
-install.packages("RGT")
-install.packages("rpart.plot")
-install.packages("rpart")
-install.packages("rattle")
+#install.packages("RGT")
+#install.packages("rpart.plot")
+#install.packages("rpart")
+#install.packages("rattle")
 
 library(rpart)
 library(rattle)
 library(rpart.plot)
 
-Credit_card_final_DT <- credit_card_applications
+Credit_card_DT <- credit_card_eda[, -which(names(credit_card_eda) %in% c("IncomeRange", "Residence.Years", "Company.Years", "x_Avgas.CC.Utilization.in.last.12.months" ))]
 
 # Let's split the data in training and test datasets. 
 
 set.seed(100)
-split_indices <- sample.split(Credit_card_final_DT$Performance.Tag, SplitRatio = 0.70)
+split_indices <- sample.split(Credit_card_DT$Performance.Tag, SplitRatio = 0.70)
 
-train_dt <- Credit_card_final_DT[split_indices, ]
+train_dt <- Credit_card_DT[split_indices, ]
 
-test_dt <- Credit_card_final_DT[!split_indices, ]
+test_dt <- Credit_card_DT[!split_indices, ]
 
-nrow(train_dt)/nrow(Credit_card_final_DT)
+nrow(train_dt)/nrow(Credit_card_DT)
 
-nrow(test_dt)/nrow(Credit_card_final_DT)
+nrow(test_dt)/nrow(Credit_card_DT)
 
 
 # building a tree with arbitrary minsplit and cp
-credit_card_1 <-  rpart(Performance.Tag ~ .,data=train_dt, method= "class", 
-                        control=rpart.control(minsplit=65, cp=0.001))
+colnames(train_dt)
+#credit_card_1 <-  rpart(Performance.Tag ~ .,data=train_dt, method= "class")
+summary(train_dt$Performance.Tag)
+tree.model <- rpart(formula=Performance.Tag ~ .,                                # formula
+                    data = train_dt,                             # training data
+                    method = "class",                         # classification or regression
+                    control = rpart.control(minsplit = 2,  # min observations for node
+                                            minbucket = 1, # min observations for leaf node
+                                            cp = 0.001))       # complexity parameter
+rpart(formula=fm.pipe, data=Data, 
+      control=rpart.control(minsplit=1, minbucket=1, cp=0.001))
 
-printcp(credit_card_1)
-prp(credit_card_1)
+tree.predict <- predict(tree.model, test_dt, type = "class")
+printcp(tree.model)
+prp(tree.model)
 str(train_dt)
