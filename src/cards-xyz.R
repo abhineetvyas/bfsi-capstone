@@ -26,6 +26,7 @@ library(knitr)
 library(data.table)
 library(ROCR)
 library(pROC) 
+library(caret)
 
 #-------------------------------------------------------
 #Synopsis:
@@ -2089,27 +2090,69 @@ library(rattle)
 library(rpart.plot)
 
 Credit_card_DT <- credit_card_eda[, -which(names(credit_card_eda) %in% c("IncomeRange", "Residence.Years", "Company.Years", "x_Avgas.CC.Utilization.in.last.12.months" ))]
+colnames(Credit_card_DT)
+numericcols <- c( "No.of.dependents" ,"Income" ,"No.of.months.in.current.residence" ,"No.of.months.in.current.company",                                
+                  "No.of.times.90.DPD.or.worse.in.last.6.months" ,"No.of.times.60.DPD.or.worse.in.last.6.months"  ,                 
+                  "No.of.times.30.DPD.or.worse.in.last.6.months", "No.of.times.90.DPD.or.worse.in.last.12.months"  ,                
+                  "No.of.times.60.DPD.or.worse.in.last.12.months" ,"No.of.times.30.DPD.or.worse.in.last.12.months"  ,                
+                  "Avgas.CC.Utilization.in.last.12.months", "No.of.trades.opened.in.last.6.months"         ,                  
+                  "No.of.trades.opened.in.last.12.months" , "No.of.PL.trades.opened.in.last.6.months"        ,                
+                  "No.of.PL.trades.opened.in.last.12.months" , "No.of.Inquiries.in.last.6.months..excluding.home...auto.loans." ,
+                  "No.of.Inquiries.in.last.12.months..excluding.home...auto.loans.", "Outstanding.Balance"     ,                                       
+                  "Total.No.of.Trades" )
+factorcols <- c("Gender" ,"Marital.Status", "Education", "Profession", "Type.of.residence", 
+                "Presence.of.open.auto.loan" ,"Presence.of.open.home.loan" , "AgeCategory" )
 
+Credit_card_DT[, numericcols] <- lapply(numericcols, function(x) as.numeric(as.character(Credit_card_DT[, x])))
+Credit_card_DT[, factorcols] <- lapply(factorcols, function(x) as.factor(as.character(Credit_card_DT[, x])))
+
+write.csv(Credit_card_DT, "Credit_card_DT.csv")
 # Let's split the data in training and test datasets.
 
 split_indices <- sample.split(Credit_card_DT$Performance.Tag, SplitRatio = 0.70)
 train_dt <- Credit_card_DT[split_indices, ]
 test_dt <- Credit_card_DT[!split_indices, ]
 
-# building a tree with arbitrary minsplit and cp
+# building a tree with arbitrary cp
 
-tree.model <- rpart(formula = Performance.Tag ~  ., data = train_dt, control = rpart.control(cp = 1e-04))
+tree.model1 <-  rpart(Performance.Tag ~ ., data=train_dt, method= "class", 
+                     control=rpart.control( minsplit=10,cp=0.0001))
+plot(tree.model1)
 
-bestcp <- tree.model$cptable[which.min(tree.model$cptable[,"xerror"]),"CP"]
+# Increasing the minsplit two fold to 20 
+tree.model2 <-  rpart(Performance.Tag ~ ., data=train_dt, method= "class", 
+                      control=rpart.control(minsplit=20, cp=0.0001))
 
+plot(tree.model2)
+
+tree.model2$variable.importance
+
+# We can further simplify the tree by increasing minsplit
+tree.model3 <-  rpart(Performance.Tag ~ ., data=train_dt, method= "class", 
+                      control=rpart.control(minsplit=30, minbucket = 15, cp=0.0001))
+
+tree.model3$variable.importance
+plot(tree.model3)
+
+
+## Model Evaluation for tree.model3
+# using test data from now on
+# tree.model3
+test_dt <- Credit_card_DT[!split_indices, ]
+tree.model3_pred <- predict(tree.model3, test_dt[, -27], type = "class")
+
+tree.model3_pred <- ifelse(tree.model3_pred==1,"yes","no")
+test_dt$Performance.Tag <-ifelse(test_dt$Performance.Tag==1,"yes","no")
+
+confusionMatrix(tree.model3_pred, test_dt[, 27], positive = "yes")
+tree.pruned <- prune(tree.model3_pred, cp = bestcp)
 #Cross test to choose CP ------------------------------------------------------------
-library(caret)
 
 # set the number of folds in cross test to 5
 tree.control = trainControl(method = "cv", number = 5)
 
 # set the search space for CP
-tree.grid = expand.grid(cp = seq(0, 0.02, 0.0025))
+tree.grid = expand.grid(cp = seq(0, 0.02, 0.0001))
 
 # train model
 tree.model <- train(Performance.Tag ~ .,
@@ -2127,8 +2170,6 @@ tree.model
 # look at best value of hyperparameter
 tree.model$bestTune
 
-#tree.model <- rpart(formula = Performance.Tag ~  ., data = train_dt, control = rpart.control(cp = 0.02))
-
 # make predictions on test set
 tree.predict <- predict.train(tree.model, test_dt)
 
@@ -2144,20 +2185,9 @@ ggplot(data = accuracy_graph, aes(x = cp, y = Accuracy*100)) +
   labs(x = "Complexity Parameter (CP)", y = "Accuracy", title = "CP vs Accuracy")
 
 
-
-
 #tree pruning using the best CP
 tree.model <- rpart(formula = Performance.Tag ~  ., data = train_dt, control = rpart.control(cp = bestcp))
 tree.pruned <- prune(tree.model, cp = bestcp)
-
-
-
-
-# confusion matrix (training data)
-# conf.matrix <- table(train_dt$Performance.Tag, predict(tree.pruned))
-# rownames(conf.matrix) <- paste("Actual", rownames(conf.matrix), sep = ":")
-# colnames(conf.matrix) <- paste("Pred", colnames(conf.matrix), sep = ":")
-# print(conf.matrix)
 
 # make predictions on the test set
 tree.predict <- predict(tree.model, test_dt, type = "class")
@@ -2169,3 +2199,14 @@ tree.predict <- predict(tree.model, test_dt, type = "class")
 printcp(tree.model)
 prp(tree.model)
 str(train_dt)
+
+
+# Build the random forest
+library(randomForest)
+set.seed(71)
+sapply(train_dt, class)
+data.rf <- randomForest(Performance.Tag ~ ., data=train_dt, proximity=FALSE,
+                        ntree=100, mtry=5, do.trace=TRUE, na.action=na.omit)
+data.rf
+testPred <- predict(data.rf, newdata=test_dt)
+table(testPred, test_dt$Performance.Tag)
