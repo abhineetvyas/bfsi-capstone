@@ -2079,6 +2079,31 @@ Attrition_decile = lift(test_actual_default, test_pred, groups = 10)
 
 Attrition_decile
 
+#application score card
+data_score_card <- credit_card_regression
+colnames(data_score_card)
+data_score_card$prob_bad<- predict(final_model, type = "response", 
+                                   newdata = data_score_card[,-27])
+
+data_score_card$prob_good <- (1 - data_score_card$prob_bad)
+data_score_card$odds_good <- data_score_card$prob_good/data_score_card$prob_bad
+data_score_card$log_odds_good <- log(data_score_card$odds_good)
+
+factorOdds <- 20/log(2) # Odds to double 20 points
+factorOdds
+offset_factorOdds <- 400 - (factorOdds*log(10)) # 10:1 at a score of 400
+data_score_card$score <- offset_factorOdds + factorOdds * data_score_card$log_odds_good
+
+cut_off_score <- offset_factorOdds + factorOdds * log((1-0.049)/0.049)
+cut_off_score
+
+#total number of good customers
+nrow(data_score_card[(data_score_card$score >= cut_off_score),]) 
+
+#total customers
+nrow(data_score_card)
+
+
 #-------------------------------
 #install.packages("RGT")
 #install.packages("rpart.plot")
