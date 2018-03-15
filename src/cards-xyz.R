@@ -2103,6 +2103,20 @@ nrow(data_score_card[(data_score_card$score >= cut_off_score),])
 #total customers
 nrow(data_score_card)
 
+#misclassified rate
+
+data_score_card$pred_performance_tag <- ifelse(data_score_card$prob_bad >= 0.049,1,0)
+data_score_card$is_miss_classified <- ifelse(data_score_card$Performance.Tag != data_score_card$pred_performance_tag,1,0)
+miss_classified_percentage <- sum(data_score_card$is_miss_classified)/nrow(data_score_card) * 100
+miss_classified_percentage
+
+#auto rejection rate or 
+
+auto_rejection_rate <- sum(data_score_card$pred_performance_tag)/nrow(data_score_card)
+auto_approval_rate = 1 - auto_rejection_rate
+
+
+
 
 #-------------------------------
 #install.packages("RGT")
