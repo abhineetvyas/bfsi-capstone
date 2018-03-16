@@ -31,27 +31,25 @@ library(caret)
 #-------------------------------------------------------
 #Synopsis:
 #-------------------------------------------------------
-#  Credit card companies (CredX in this case) primarily earn their money in three ways. 
-#  They charge merchants around 2% to 3% of every transaction made using their credit card. 
-#  They charge customers interest on unpaid balance carried from month to month. 
-#  And they charge a variety of fees, including annual and late fees. For these reasons, credit
-#  card companies earn more money the more customers they have, and are always looking for more
-#  people to use their services.
+#  CredX is a leading credit card provider that gets thousands of credit card applicants every year. 
+#  But in the past few years, it has experienced an increase in credit loss.
 
 #------------------------------------------------------------------------
 #Business Objective: Delinquent vs default customers  [problem statement]
 #------------------------------------------------------------------------
 #  As We are that credit X it has experienced an increase in credit loss. The CEO believes that
 #  the best strategy to mitigate credit risk is to 'acquire the right customers'.
-#  Help CredX identify right applicants to provide credit cards to by using predictive models i.e. 
-#  by determining the factors affecting credit risk, create strategies to mitigate the acquisition 
-#  risk and assess the financial benefit increasing the profitability of credit cards.
+#  In this project our job is to Help CredX identify right applicants to provide credit cards to by 
+#  using predictive models i.e. 
+#  1.by determining the factors affecting credit risk
+#  2. Create strategies to mitigate the acquisition risk and 
+#  3. assess the financial benefit increasing the profitability of credit cards.
 
 #------------------------------------------------------
-#Solution
+#Approach
 #------------------------------------------------------
-# TO solve this business problem statement of acquisitionanalytics we are applying CRISP-DM framework  which 
-# includes the following steps:
+# TO solve this business problem statement of acessing the credit default risk at  acquisition
+# we are applying CRISP-DM framework  which includes the following steps:
 # 1. Business Understanding
 # 2. Data Understanding
      #2.1 check for null values, sanity check, duplicate records
@@ -69,65 +67,107 @@ library(caret)
      #4.1 Chi-square test for feature selection for categorical variables
      #4.2 IV test for feature selection for continuous  variables
 # 4. Data Modeling - Prepare the below  different models
-     #4.1 logistic regression - starts with it
-     #4.2 Decision tree/random forest
-     #4.3 SVM if possible 
+     #4.1 logistic regression - start with it
+     #4.2 Decision tree
+     #4.3 random forest
+     
 # 5. Model Evaluation - select the best model based on the below criteria
       #Accuracy,Sensitivity, Specificity of the model
       #KS statistics
       #Application score card based on the probability
       #vintage curve
-# 6. Model Deployment
+# 6. Model Deployment & acessing financial benefit of the  project :
+
+# a.The implications of using the model for auto approval or rejection, i.e. how many applicants on 
+#    an average would the model automatically approve or reject.
+
+# b.The potential credit loss avoided with the help of the model
 
 #----------------------------------------------------
 # 1. Business understanding
 #----------------------------------------------------
 #  With the large potential profit in credit card banking also comes the risk of customers not paying
 #  off their credit card balance. As CredX seeks to expand, it is important that they exercise good risk
-#  control- because they will try to expand their customer base and in the run acquire certain risky customers .
+#  control- because while they  try to expand their customer base , in the run acquire certain risky customers .
 #  a) There may be certain customers who are habitual defaulters from DPD - but eventually pay - 
 #     These are 'medium risk- high revenue' customers
-#  b) There may be certain customers who are regular DPD payers  - they are' low risk - low revenue' 
-#  c) There may be certain customers who are total defaulters and do not pay - These are 'high risk- no revenue' and high credit loss customers.
+#  b) There may be certain customers who are regularly pay within due date -they are' low risk - low revenue' 
+#  c) There may be certain customers who are non paying customers - These are 'high risk- no revenue' and high credit loss customers.
 #  Customers of category medium risk need are the right of customers to be acquired , Low risk are good to have
 #  to increase the customer base but they are not high revenue customers ( as revenue stream from them is 
 #  limited to only transactional costs) ,Medium risk customers are generally higher revenue customers - revenue
 #  from whom is transactional cost+ late fee/interest earned  - while  completely high risk customers need to
-#  be avoided as they major contributors to credit loss.
+#  be avoided as they major contributors to credit loss to the credit card company.
 
 #----------------------------------------------------
 #  2. Data Understanding - EDA
+# Data set provided is in terms of two files :
+# 1. Demographic/application data: This is obtained from the information provided by the applicants at the
+#    time of credit card application. It contains customer-level information on age, gender, income, 
+#    marital status, etc
+# 2. Credit bureau: This is taken from the credit bureau and contains variables such as
+#    'number of times 30 DPD or worse in last 3/6/12 months', 'outstanding balance', 'number of trades', etc.
 #----------------------------------------------------
-# Data Sourcing - Merge the data set
+# Data Sourcing & Merging the data sets 
 #----------------------------------------------------
 demographic_data <- read.csv("Demographic data.csv", stringsAsFactors = FALSE)
 credit_bureau_data <- read.csv("Credit Bureau data.csv", stringsAsFactors = FALSE)
 
+# Details of loaded datasets
+# demographic dataset contains 71295 records having 12 variables
+# credit beureau dataset contains 71295 records having 19 variables .
+# Each of them has one target variable called 'Performance Tag'.
 
-# Check duplicate records with respect to entire row data
+# Checking duplicate records with respect to entire row data
 sum(duplicated(demographic_data)) 
 sum(duplicated(credit_bureau_data)) 
-# No duplicate Records.
+# No duplicate Records in each of the above data sets .
 
-# Check duplicate records with respect to application id
-# Check duplicate records with respect to application id in demographic_data
+# Checking duplicate records with respect to application id in demographic_data
 demographic_data[duplicated(demographic_data$Application.ID),]$Application.ID 
-# Application Ids viz.  765011468, 653287861, 671989187 are duplicate
+# Application Ids viz.  765011468, 653287861, 671989187 are duplicate 
+# Removing these duplicate application Ids data from the Demographic data set 
 demographic_data <- demographic_data[which(!duplicated(demographic_data$Application.ID)), ]
 
 # Check duplicate records with respect to application id in credit_bureau_data
 credit_bureau_data[duplicated(credit_bureau_data$Application.ID),]$Application.ID 
 # Application Ids viz.  765011468, 653287861, 671989187 are duplicate
+# Removing these duplicate application Ids data from the credit_bureau_data set
 credit_bureau_data <- credit_bureau_data[which(!duplicated(credit_bureau_data$Application.ID)), ]
 
-#Check for missing Values
+#Checking for missing Values(# NA records) in each of these data sets.
+
+# For Demographic dataset.
 colSums(is.na(demographic_data))
-colSums(is.na(credit_bureau_data))
-# There are null records in two columns Performance.Tag - 1425 records and No.of.dependents - 3
-# As we have to look the data where we have Performance.Tag means for customers have approval result
-# we can ignore records having NAs for Performance.Tag.
+
+# In the Demographic  data column wise count of null values is as below:
+#  1.Performance Tag -1425
+#  2.No of Dependents -3 
+
+# Since target variable Performance tag means these customers already have approval for credit card 
+# and whether they defaulted on payments or not - So any NA values in the same makes no sense in case if
+# they were within the approved population - so let us treat the same as rejected population for credit
+# card application and let us remove these records
+
 demographic_data <- demographic_data[!is.na(demographic_data$Performance.Tag),]
 unique(demographic_data$Performance.Tag)
+
+# For Credit Bureau dataset.
+
+colSums(is.na(credit_bureau_data))
+
+# In the Credit bureau data column wise count of null values is as below:
+#  1.Performance Tag -1425
+#  2.Avgas.CC.Utilization.in.last.12.month -1058
+#  3.No.of.trades.opened.in.last.6.months -1
+#  4. Presence.of.open.home.loan -272
+#  5.Outstanding.Balance -272
+
+# Since target variable Performance tag means these customers already have approval for credit card 
+# and whether they defaulted on payments or not - So any NA values in the same makes no sense in case if
+# they were within the approved population - so let us treat the same as rejected population for credit
+# card application and let us remove these records
+
 credit_bureau_data <- credit_bureau_data[!is.na(credit_bureau_data$Performance.Tag),]
 unique(credit_bureau_data$Performance.Tag)
 
@@ -137,23 +177,21 @@ unique(credit_bureau_data$Performance.Tag)
 # that NA means no dependents available and updating the dataset with 0 instead of NA.
 #demographic_data$No.of.dependents[is.na(demographic_data$No.of.dependents)] <- 0
 
-# Now lets merge the credit burew data with demographic data for all the applications
+# Now lets merge the credit bureau data with demographic data for all the applications
 credit_card_applications <- merge(x = demographic_data, y = credit_bureau_data, by = "Application.ID", all = TRUE)
 credit_card_applications$Performance.Tag <- credit_card_applications$Performance.Tag.x
 credit_card_applications <- credit_card_applications[ , !(names(credit_card_applications) %in% c("Performance.Tag.x","Performance.Tag.y"))]
 write.csv(credit_card_applications, "credit_card_applications.csv")
-summary(credit_card_applications)
-
 #compute correlation matrix of entire data set
 #corr_res <- cor(credit_card_applications)
 #round(corr_res, 2)
+#-----------------------------------------------------------------------------------------------------
 
 str(credit_card_applications)
 #----------------------------------------------------
-# Data Cleaning - Feature understanding and Univeriate analysis
+# Data Cleaning -& Preparation & Univariate Analysis. 
 #----------------------------------------------------
 credit_card_eda <- credit_card_applications
-#factor(credit_card_eda$Performance.Tag)
 credit_card_eda$Performance.Tag <- as.factor(credit_card_eda$Performance.Tag)
 
 #1. Application.ID
