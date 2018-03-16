@@ -1848,6 +1848,144 @@ colnames(data1_credit_card_eda)
 # 4. Data Modeling - Logistic regression
 #--------------------------------------------------------------------
 
+# Data modeling on Demographic data
+credit_card_demographic <- data1_credit_card_eda[,c("Gender",                                                      
+                                                    "Marital.Status",
+                                                    "No.of.dependents",
+                                                    "Income",
+                                                    "Education",                                                      
+                                                    "Profession",
+                                                    "Type.of.residence",
+                                                    "No.of.months.in.current.residence",
+                                                    "No.of.months.in.current.company",                                
+                                                    "AgeCategory",
+                                                    "Performance.Tag")]
+
+head(credit_card_demographic)
+set.seed(100)
+
+indices_demo = sample.split(credit_card_demographic$Performance.Tag, SplitRatio = 0.7)
+
+train_demo = credit_card_demographic[indices_demo,]
+
+test_demo = credit_card_demographic[!(indices_demo),]
+
+model_demo_1 = glm(Performance.Tag ~ ., data = train_demo, family = "binomial")
+summary(model_demo_1)
+
+model_demo_2<- stepAIC(model_demo_1, direction="both")
+summary(model_demo_2)
+
+model_demo_3 <- glm(Performance.Tag ~ Gender + No.of.dependents + Income + No.of.months.in.current.residence + 
+                 No.of.months.in.current.company, family = "binomial", data = train_demo)
+summary(model_demo_3)
+vif(model_demo_3)
+
+#Remove Gender
+model_demo_4 <- glm(Performance.Tag ~ No.of.dependents + Income + No.of.months.in.current.residence + 
+                      No.of.months.in.current.company, family = "binomial", data = train_demo)
+summary(model_demo_4)
+vif(model_demo_4)
+
+#Remove No.of.dependents
+model_demo_5 <- glm(Performance.Tag ~ Income + No.of.months.in.current.residence + 
+                      No.of.months.in.current.company, family = "binomial", data = train_demo)
+summary(model_demo_5)
+vif(model_demo_5)
+
+final_model_demo <- model_demo_5
+summary(final_model_demo)
+
+### Model Evaluation
+### Test Data ####
+
+#predicted probabilities of Attrition 1 for test data
+
+test_demo_pred = predict(final_model_demo, type = "response", 
+                    newdata = test_demo[,-42])
+
+
+# Let's see the summary 
+
+summary(test_demo_pred)
+
+test_demo$prob <- test_demo_pred
+#View(test)
+
+# Let's use the probability cutoff of 50%.
+
+test_demo_pred_default <- factor(ifelse(test_demo_pred >= 0.50, "Yes", "No"))
+test_demo_actual_default <- factor(ifelse(test_demo$Performance.Tag==1,"Yes","No"))
+table(test_demo_actual_default,test_demo_pred_default)
+
+test_demo_pred_default <- factor(ifelse(test_demo_pred >= 0.40, "Yes", "No"))
+
+test_demo_conf <- confusionMatrix(test_demo_pred_default, test_demo_actual_default, positive = "Yes")
+test_demo_conf
+
+# Let's Choose the cutoff value. 
+# 
+# Let's find out the optimal probalility cutoff 
+
+perform_demo_fn <- function(cutoff) 
+{
+  predicted_demo_attrition <- factor(ifelse(test_demo_pred >= cutoff, "Yes", "No"))
+  conf <- confusionMatrix(predicted_demo_attrition, test_demo_actual_default, positive = "Yes")
+  acc <- conf$overall[1]
+  sens <- conf$byClass[1]
+  spec <- conf$byClass[2]
+  out <- t(as.matrix(c(sens, spec, acc))) 
+  colnames(out) <- c("sensitivity", "specificity", "accuracy")
+  return(out)
+}
+
+# Creating cutoff values from 0.001428351 to 0.812100 for plotting and initiallizing a matrix of 100 X 3.
+
+# Summary of test probability
+
+summary(test_demo_pred)
+
+s = seq(0.001,.80,length=100)
+
+OUT = matrix(0,100,3)
+
+for(i in 1:100)
+{
+  OUT[i,] = perform_demo_fn(s[i])
+} 
+
+plot(s, OUT[,1],xlab="Cutoff",ylab="Value",cex.lab=1.5,cex.axis=1.5,ylim=c(0,1),type="l",lwd=2,axes=FALSE,col=2)
+axis(1,seq(0,1,length=5),seq(0,1,length=5),cex.lab=1.5)
+axis(2,seq(0,1,length=5),seq(0,1,length=5),cex.lab=1.5)
+lines(s,OUT[,2],col="darkgreen",lwd=2)
+lines(s,OUT[,3],col=4,lwd=2)
+box()
+legend(0,.50,col=c(2,"darkgreen",4,"darkred"),lwd=c(2,2,2,2),c("Sensitivity","Specificity","Accuracy"))
+
+min(abs(OUT[,1]-OUT[,2]))
+cutoff <- s[which(abs(OUT[,1]-OUT[,2])<=0.04)]
+
+print(cutoff)
+
+#get the optimal cut from the test_pred data
+
+# Let's choose a cutoff value of 0.05 for final model
+
+test_demo_cutoff_default <- factor(ifelse(test_demo_pred >=0.041, "Yes", "No"))
+
+conf_demo_final <- confusionMatrix(test_demo_cutoff_default, test_demo_actual_default, positive = "Yes")
+
+acc <- conf_demo_final$overall[1]
+sens <- conf_demo_final$byClass[1]
+spec <- conf_demo_final$byClass[2]
+acc
+sens
+spec
+
+# Accuracy is not that good means application data not sufficient to create model. Lets consider full data.
+
+# Data modeling on Demographic + credit bureau data
+
 # splitting the data between train and test
 #dummies<- data.frame(sapply(credit_card_fact, 
 #                            function(x) data.frame(model.matrix(~x-1,data =credit_card_fact))[,-1]))
