@@ -2020,7 +2020,7 @@ acc
 sens
 spec
 
-# Accuracy is not that good means application data not sufficient to create model. Lets consider full data.
+# Accuracy is not that good means demographic data not sufficient to create model. Lets consider full data.
 
 # Data modeling on Demographic + credit bureau data
 
