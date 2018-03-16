@@ -2097,6 +2097,12 @@ data_score_card$score <- offset_factorOdds + factorOdds * data_score_card$log_od
 cut_off_score <- offset_factorOdds + factorOdds * log((1-0.049)/0.049)
 cut_off_score
 
+#plot of score card vs odds(good)
+ggplot(data = data_score_card, aes(x=odds_good,
+                                           y = score,
+                                           col = score)) + geom_line(size = 1.5)
+summary(data_score_card$score)
+
 #total number of good customers
 nrow(data_score_card[(data_score_card$score >= cut_off_score),]) 
 
@@ -2109,6 +2115,21 @@ data_score_card$pred_performance_tag <- ifelse(data_score_card$prob_bad >= 0.049
 data_score_card$is_miss_classified <- ifelse(data_score_card$Performance.Tag != data_score_card$pred_performance_tag,1,0)
 miss_classified_percentage <- sum(data_score_card$is_miss_classified)/nrow(data_score_card) * 100
 miss_classified_percentage
+
+data_score_card$orig_outstanding_amount <- credit_card_eda$Outstanding.Balance
+
+
+#expected credit loss
+#Expected loss(c1) = PD * EAD * LGD
+#PD = Probability of defafault of each customer, EAD = Exposure at default or oustanding
+#LGD = Loss given default.
+#Lets assume if recovery likelihood is 30% then LDG = 1  - 0.30 = 0.7
+
+
+data_score_card$expected_loss = data_score_card$prob_bad * data_score_card$orig_outstanding_amount * 0.7
+
+total_expected_loass = sum(data_score_card$expected_loss)
+print(total_expected_loass)
 
 #auto rejection rate or 
 
