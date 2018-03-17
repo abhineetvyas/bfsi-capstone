@@ -5,7 +5,7 @@
 #---------------------------------------------------------
 
 #Set the working directory
-#setwd("D:/Abhineet/Study/IIIT-B/7. Capstone Project/1. Capstone-BFS")
+setwd("D:/Abhineet/Study/IIIT-B/7. Capstone Project/1. Capstone-BFS")
 
 library(MASS)
 library(car)
@@ -28,16 +28,17 @@ library(caret)
 library(rpart)
 library(rattle)
 library(rpart.plot)
+library(randomForest)
 
-#-------------------------------------------------------
-#Synopsis:
-#-------------------------------------------------------
+#-------------------------------------------------
+# Synopsis:
+#-------------------------------------------------
 #  CredX is a lending credit card provider that gets thousands of credit card applicants every year. 
 #  But in the past few years, it has experienced an increase in credit loss.
 
-#------------------------------------------------------------------------
-#Business Objective: Delinquent vs default customers  [problem statement]
-#------------------------------------------------------------------------
+#-------------------------------------------------
+# Business Objective: [Problem Statement]
+#-------------------------------------------------
 #  Cred X has experienced an increase in credit loss. The CEO believes that
 #  the best strategy to mitigate credit risk is to 'acquire the right customers'.
 #  In this project our job is to help Cred X identify right applicants to provide credit cards  by 
@@ -46,9 +47,9 @@ library(rpart.plot)
 #  2. Create strategies to mitigate the acquisition risk and 
 #  3. assess the financial benefit increasing the profitability of credit cards.
 
-#------------------------------------------------------
-#Approach
-#------------------------------------------------------
+#-------------------------------------------------
+# Approach
+#-------------------------------------------------
 # TO solve this business problem statement of acessing the credit default risk at  acquisition
 # we are applying CRISP-DM framework  which includes the following steps:
 # 1. Business Understanding
@@ -87,9 +88,9 @@ library(rpart.plot)
     #6.3 Recommendations to avoid the potential credit loss avoided with the help of the model
 
 
-#----------------------------------------------------
-# 1. Business understanding
-#----------------------------------------------------
+#-------------------------------------------------
+# Business understanding
+#-------------------------------------------------
 #  With the large potential profit in credit card banking also comes the risk of customers not paying
 #  off their credit card balance. As CredX seeks to expand, it is important that they exercise good risk
 #  control- because while they  try to expand their customer base ,also in the run, acquire certain risky customers 
@@ -99,17 +100,18 @@ library(rpart.plot)
 #  c) There may be certain customers who are non paying customers - These are 'high risk- no revenue' and high credit loss customers.
 #  Customers of category 'medium risk',are the right customers to be acquired, Low risk are good to 
 #  to increase the customer base but they are not high revenue customers 
-#----------------------------------------------------
-#  2. Data Understanding - EDA
+#-------------------------------------------------
+# Data Understanding - EDA
+#-------------------------------------------------
 # Data set provided is in terms of two files :
 # 1. Demographic/application data: This is obtained from the information provided by the applicants at the
 #    time of credit card application. It contains customer-level information on age, gender, income, 
 #    marital status, etc
 # 2. Credit bureau: This is taken from the credit bureau and contains variables such as
 #    'number of times 30 DPD or worse in last 3/6/12 months', 'outstanding balance', 'number of trades', etc.
-#----------------------------------------------------
+#-------------------------------------------------
 # Data Sourcing & Merging the data sets 
-#----------------------------------------------------
+#-------------------------------------------------
 demographic_data <- read.csv("Demographic data.csv", stringsAsFactors = FALSE)
 credit_bureau_data <- read.csv("Credit Bureau data.csv", stringsAsFactors = FALSE)
 
@@ -183,12 +185,9 @@ credit_card_applications$Performance.Tag <- credit_card_applications$Performance
 credit_card_applications <- credit_card_applications[ , !(names(credit_card_applications) %in% c("Performance.Tag.x","Performance.Tag.y"))]
 write.csv(credit_card_applications, "credit_card_applications.csv")
 
-#-----------------------------------------------------------------------------------------------------
-
-str(credit_card_applications)
-#----------------------------------------------------
+#-------------------------------------------------
 # Data Understanding - Univariate Analysis. 
-#----------------------------------------------------
+#-------------------------------------------------
 credit_card_eda <- credit_card_applications
 credit_card_eda$Performance.Tag <- as.factor(credit_card_eda$Performance.Tag)
 box_theme<- theme(axis.line=element_blank(),axis.title=element_blank(), 
@@ -213,8 +212,6 @@ credit_card_eda$AgeCategory <- cut(credit_card_eda$Age,
                                    breaks = c(-Inf, 25, 61, Inf), 
                                    labels = c("Youth", "Adults", "Seniors"), 
                                    right = FALSE)
-# We can remove old column
-credit_card_eda <- credit_card_eda[ , !(names(credit_card_eda) %in% c("Age"))]
 # check the distribution
 ggplot(data = credit_card_eda, aes(x=AgeCategory)) + 
   geom_histogram(stat = "count")
@@ -229,7 +226,7 @@ ggplot(data = credit_card_eda, aes(x=Gender)) +
 # looking at the distribution it looks like more CC is distributed more for Male
 
 #4. Marital.Status..at.the.time.of.application.
-names(credit_card_eda)[2]<-paste("Marital.Status")
+names(credit_card_eda)[3]<-paste("Marital.Status")
 unique(credit_card_eda$Marital.Status)
 # in dataset some of the Marital Status are empty means it is invalid we can remove invalid data
 credit_card_eda <- credit_card_eda[!credit_card_eda$Marital.Status %in% c(""),]
@@ -448,9 +445,9 @@ unique(credit_card_eda$Presence.of.open.auto.loan)
 ggplot(data = credit_card_eda, aes(x=Presence.of.open.auto.loan)) + 
   geom_histogram(stat = "count")
 
-#--------------------------------------------------
+#-------------------------------------------------
 # Data Understanding - Bivariate Analysis
-#--------------------------------------------------
+#-------------------------------------------------
 
 plot_grid(ggplot(data = credit_card_eda, aes(x=Education, fill = Performance.Tag)) + 
   geom_bar(stat = "count", position = "dodge"),
@@ -683,7 +680,6 @@ plot_grid(ggplot(credit_card_eda, aes(x=Performance.Tag,y=Outstanding.Balance.in
 
 
 #role rate matrix
-#----------------
 columes_for_role_rate_matrix_dpd_6_months <- c("No.of.times.30.DPD.or.worse.in.last.6.months",
                            "No.of.times.60.DPD.or.worse.in.last.6.months",
                            "No.of.times.90.DPD.or.worse.in.last.6.months")
@@ -729,7 +725,6 @@ write.csv(mat_role_rate_dpd_dpd_12_months, "mat_role_rate_dpd_dpd_12_months.csv"
 
 
 # Correlation between numeric variables
-#-----------------------------------------
 #rename the long column names to short column names to better visualize the corelation matrixs
 continuous_variables <- c("Income","No.of.months.in.current.residence","No.of.months.in.current.company","Performance.Tag",
                           "Avgas.CC.Utilization.in.last.12.months","No.of.trades.opened.in.last.6.months","No.of.trades.opened.in.last.12.months","No.of.PL.trades.opened.in.last.6.months",     
@@ -766,9 +761,9 @@ cor(x[, c("Income","Out.Bal","Inq.6.mon","Inq.12.mons","mon.curr.res", "mon.curr
 # But remember, among these significant variables, one or two variables are highly correlated to each other which can be further
 # anyalysed and removed as part of stepAIC
 
-#------------------------------------------------------------------------------
-# 3. Data Prepration
-#------------------------------------------------------------------------------
+#-------------------------------------------------
+# Data Understanding - Feature Selection
+#-------------------------------------------------
 # Feature selection
 # Performing Hypothysis testing to find the significant variables:
 # 1. Education - Null hypothesis is Education is insignificant in deciding customer will default
@@ -839,7 +834,6 @@ chisq.test(cc_applications_income)
 
 
 # 10. Age  - Null hypothesis is Education is insignificant in deciding customer will default
-
 cc_applications_age <- table(credit_card_eda$Performance.Tag, credit_card_eda$AgeCategory)
 chisq.test(cc_applications_age)
 #X-squared = 2.6088, df = 2, p-value = 0.2713
@@ -984,9 +978,7 @@ chisq.test(cc_Total.No.of.Trades )
 # X-squared = 697.03, df = 44, p-value < 2.2e-16
 # #since p value <.05 we  reject the null hypothesis - ie Total.No.of.Trades is a signficant variable.
 
-#-------------Summary of feature selection-chqi square test ------------------------------------------------------------
-#######################################################################################################
-
+#Summary of feature selection-chqi square test
 # Sno     Variable name                                               pvalue                   Significant 
 # 1.      Education                                                   0.6299                            No
 # 2.      Gender                                                      0.325                             No
@@ -1017,10 +1009,10 @@ chisq.test(cc_Total.No.of.Trades )
 # 27.     Total.No.of.Trades                                          2.2e-16                           Yes 
 
 
-#--------------------------------------------------------------------
-# Prepare data for modeling
-#--------------------------------------------------------------------
-credit_card_woe_data <- credit_card_eda[, -which(names(credit_card_eda) %in% c("IncomeRange", "Residence.Years", "Company.Years", "x_Avgas.CC.Utilization.in.last.12.months" ))]
+#-------------------------------------------------
+# Data Prepration - Logistic Regression
+#-------------------------------------------------
+credit_card_woe_data <- credit_card_eda[, -which(names(credit_card_eda) %in% c("IncomeRange", "Residence.Years", "Company.Years", "x_Avgas.CC.Utilization.in.last.12.months", "AgeCategory" ))]
 
 credit_card_woe_data$Performance.Tag <- as.numeric(levels(credit_card_woe_data$Performance.Tag))[credit_card_woe_data$Performance.Tag]
 colnames(credit_card_woe_data)
@@ -1487,18 +1479,38 @@ credit_card_woe_data[(credit_card_woe_data$Presence.of.open.auto.loan == 0),]$Pr
 credit_card_woe_data[(credit_card_woe_data$Presence.of.open.auto.loan == 1 ),]$Presence.of.open.auto.loan <- -0.13558199 
 
 
-##23.AgeCategory  WOE analysis and mutation if required
-print(IV$Tables$AgeCategory ,row.names=FALSE)
-
-# AgeCategory                       N     Percent          WOE           IV
-# Adults                           64235 0.926604446     0.003911577     1.420286e-05
-# Seniors                          4795  0.069168963    -0.025015444      5.699471e-05
-# Youth                            293  0.004226591     -0.590204941      1.190403e-03
-credit_card_woe_data$AgeCategory
-credit_card_woe_data[(credit_card_woe_data$AgeCategory  =="Adults"),]$AgeCategory <- 0.003911577 
-credit_card_woe_data[(credit_card_woe_data$AgeCategory == "Seniors"),]$AgeCategory <- -0.025015444 
-credit_card_woe_data[(credit_card_woe_data$AgeCategory == "Youth" ),]$AgeCategory <- -0.590204941
-credit_card_woe_data$AgeCategory <- as.numeric(credit_card_woe_data$AgeCategory)
+##23.Age  WOE analysis and mutation if required
+print(IV$Tables$Age ,row.names=FALSE)
+#   Age    N    Percent           WOE           IV
+#[15,30] 5869 0.08465555 -0.0350961324 0.0001026146
+#[31,35] 6857 0.09890665  0.0389263546 0.0002551830
+#[36,38] 6875 0.09916628  0.0670165404 0.0007144768
+#[39,41] 7073 0.10202227  0.0705308959 0.0012387036
+#[42,44] 6952 0.10027694 -0.0472183537 0.0014575088
+#[45,47] 6781 0.09781041  0.0008002928 0.0014575715
+#[48,50] 6695 0.09656993 -0.0079316812 0.0014636249
+#[51,53] 6794 0.09799792 -0.1407460861 0.0032845976
+#[54,57] 7577 0.10929206  0.0401657007 0.0034641943
+#[58,65] 7855 0.11330198 -0.0132861970 0.0034840735
+credit_card_woe_data[(credit_card_woe_data$Age  >= 15)
+                     &(credit_card_woe_data$Age  <= 30),]$Age  <- -0.0350961324
+credit_card_woe_data[(credit_card_woe_data$Age  >= 31)
+                     &(credit_card_woe_data$Age  <= 35),]$Age  <- 0.0389263546
+credit_card_woe_data[(credit_card_woe_data$Age  >= 36)
+                     &(credit_card_woe_data$Age  <= 41),]$Age  <- 0.0705308959
+credit_card_woe_data[(credit_card_woe_data$Age  >= 42)
+                     &(credit_card_woe_data$Age  <= 44),]$Age  <- -0.0472183537
+credit_card_woe_data[(credit_card_woe_data$Age  >= 45)
+                     &(credit_card_woe_data$Age  <= 47),]$Age  <- 0.0008002928
+credit_card_woe_data[(credit_card_woe_data$Age  >= 48)
+                     &(credit_card_woe_data$Age  <= 50),]$Age  <- -0.0079316812
+credit_card_woe_data[(credit_card_woe_data$Age  >= 51)
+                     &(credit_card_woe_data$Age  <= 53),]$Age  <- -0.1407460861
+credit_card_woe_data[(credit_card_woe_data$Age  >= 54)
+                     &(credit_card_woe_data$Age  <= 57),]$Age  <- 0.0401657007
+credit_card_woe_data[(credit_card_woe_data$Age  >= 58)
+                     &(credit_card_woe_data$Age  <= 65),]$Age  <- -0.0132861970
+credit_card_woe_data$Age <- as.numeric(credit_card_woe_data$Age)
 
 ##24.Type.of.residence WOE analysis and mutation if required
 print(IV$Tables$Type.of.residence ,row.names=FALSE)
@@ -1542,7 +1554,7 @@ print(IV$Tables$Gender ,row.names=FALSE)
 # Gender                          N   Percent         WOE          IV
 # F                             16393 0.2364727  0.03360694 0.000271225
 # M                             52930 0.7635273 -0.01062152 0.000356946
-
+summary(credit_card_woe_data$Gender)
 credit_card_woe_data[(credit_card_woe_data$Gender == "F"),]$Gender <- 0.03360694
 credit_card_woe_data[(credit_card_woe_data$Gender == "M"),]$Gender <- -0.01062152
 credit_card_woe_data$Gender <- as.numeric(credit_card_woe_data$Gender)
@@ -1558,9 +1570,9 @@ credit_card_woe_data[(credit_card_woe_data$Marital.Status   == "Single" ),]$Mari
 credit_card_woe_data$Marital.Status <- as.numeric(credit_card_woe_data$Marital.Status)
 colnames(credit_card_woe_data)
 
-#--------------------------------------------------------------------
-# 4. Data Modeling - Logistic regression
-#--------------------------------------------------------------------
+#-------------------------------------------------
+# Data Modeling - Logistic regression
+#-------------------------------------------------
 
 # Data modeling on Demographic data
 credit_card_demographic <- credit_card_woe_data[,c("Gender",                                                      
@@ -1572,7 +1584,7 @@ credit_card_demographic <- credit_card_woe_data[,c("Gender",
                                                     "Type.of.residence",
                                                     "No.of.months.in.current.residence",
                                                     "No.of.months.in.current.company",                                
-                                                    "AgeCategory",
+                                                    "Age",
                                                     "Performance.Tag")]
 
 head(credit_card_demographic)
@@ -1591,27 +1603,32 @@ model_demo_2<- stepAIC(model_demo_1, direction="both")
 summary(model_demo_2)
 
 model_demo_3 <- glm(Performance.Tag ~ Gender + No.of.dependents + Income + No.of.months.in.current.residence + 
-                 No.of.months.in.current.company, family = "binomial", data = train_demo)
+                      No.of.months.in.current.company + Age, family = "binomial", data = train_demo)
 summary(model_demo_3)
 vif(model_demo_3)
 
-#Remove Gender
-model_demo_4 <- glm(Performance.Tag ~ No.of.dependents + Income + No.of.months.in.current.residence + 
-                      No.of.months.in.current.company, family = "binomial", data = train_demo)
+#Remove Age
+model_demo_4 <- glm(Performance.Tag ~ Gender + No.of.dependents + Income + No.of.months.in.current.residence + 
+                      No.of.months.in.current.company , family = "binomial", data = train_demo)
 summary(model_demo_4)
 vif(model_demo_4)
 
-#Remove No.of.dependents
-model_demo_5 <- glm(Performance.Tag ~ Income + No.of.months.in.current.residence + 
+#Remove Gender
+model_demo_5 <- glm(Performance.Tag ~ No.of.dependents + Income + No.of.months.in.current.residence + 
                       No.of.months.in.current.company, family = "binomial", data = train_demo)
 summary(model_demo_5)
 vif(model_demo_5)
 
-final_model_demo <- model_demo_5
+#Remove No.of.dependents
+model_demo_6 <- glm(Performance.Tag ~ Income + No.of.months.in.current.residence + 
+                      No.of.months.in.current.company, family = "binomial", data = train_demo)
+summary(model_demo_6)
+vif(model_demo_6)
+
+final_model_demo <- model_demo_6
 summary(final_model_demo)
 
 ### Model Evaluation
-### Test Data ####
 
 #predicted probabilities of Attrition 1 for test data
 
@@ -1683,18 +1700,18 @@ print(cutoff)
 
 #get the optimal cut from the test_pred data
 
-# Let's choose a cutoff value of 0.05 for final model
+# Let's choose a cutoff value of 0.043 for final model
 
-test_demo_cutoff_default <- factor(ifelse(test_demo_pred >=0.041, "Yes", "No"))
+test_demo_cutoff_default <- factor(ifelse(test_demo_pred >=0.043, "Yes", "No"))
 
 conf_demo_final <- confusionMatrix(test_demo_cutoff_default, test_demo_actual_default, positive = "Yes")
 
 acc <- conf_demo_final$overall[1]
 sens <- conf_demo_final$byClass[1]
 spec <- conf_demo_final$byClass[2]
-acc
-sens
-spec
+acc #0.60
+sens #0.55
+spec #0.60
 
 # Accuracy is not that good means demographic data not sufficient to create model. Lets consider full data.
 
@@ -1786,15 +1803,13 @@ summary(model_9)
 vif(model_9)
 
 
-final_model<- model_9
-summary(final_model)
+final_model_LR<- model_9
+summary(final_model_LR)
 
 ### Model Evaluation
-### Test Data ####
-
 #predicted probabilities of Attrition 1 for test data
 
-test_pred = predict(final_model, type = "response", 
+test_pred = predict(final_model_LR, type = "response", 
                     newdata = test[,-42])
 
 
@@ -1811,14 +1826,10 @@ test_pred_default <- factor(ifelse(test_pred >= 0.50, "Yes", "No"))
 test_actual_default <- factor(ifelse(test$Performance.Tag==1,"Yes","No"))
 table(test_actual_default,test_pred_default)
 
-test_pred_default <- factor(ifelse(test_pred >= 0.40, "Yes", "No"))
-
 test_conf <- confusionMatrix(test_pred_default, test_actual_default, positive = "Yes")
 test_conf
 
-# Let's Choose the cutoff value. 
-# 
-# Let's find out the optimal probalility cutoff 
+# Sensitivity and specificity is too low let's Choose the optimal cutoff value. 
 
 perform_fn <- function(cutoff) 
 {
@@ -1864,16 +1875,16 @@ print(cutoff)
 
 # Let's choose a cutoff value of 0.05 for final model
 
-test_cutoff_default <- factor(ifelse(test_pred >=0.049, "Yes", "No"))
+test_cutoff_default <- factor(ifelse(test_pred >=0.05, "Yes", "No"))
 
 conf_final <- confusionMatrix(test_cutoff_default, test_actual_default, positive = "Yes")
 
 acc <- conf_final$overall[1]
 sens <- conf_final$byClass[1]
 spec <- conf_final$byClass[2]
-acc
-sens
-spec
+acc #0.65
+sens #0.61
+spec #0.65
 
 test_cutoff_default <- ifelse(test_cutoff_default=="Yes",1,0)
 test_actual_default <- ifelse(test_actual_default=="Yes",1,0)
@@ -1893,8 +1904,8 @@ max(ks_table_test)
 plot(performance_measures_test, main = "ROC curve for Employee Attrition",  colorize=T, lwd = 3)
 
 #plot ROC chart using pROC package as it gives the better visualization
-glm_link_scores <- predict(final_model,  test[,-1], type="link")
-glm_response_scores <- predict(final_model,  test[,-1], type="response")
+glm_link_scores <- predict(final_model_LR,  test[,-1], type="link")
+glm_response_scores <- predict(final_model_LR,  test[,-1], type="response")
 
 plot(roc(test$Performance.Tag, glm_response_scores, direction="<"),
      col="green", lwd=3, main="ROC curve of Employee Attrition")
@@ -1919,69 +1930,25 @@ lift <- function(labels , predicted_prob,groups=10) {
   return(gaintable)
 }
 
-Attrition_decile = lift(test_actual_default, test_pred, groups = 10)
+default_decile = lift(test_actual_default, test_pred, groups = 10)
 
-Attrition_decile
+default_decile
+#bucket total totalresp Cumresp      Gain  Cumlift
+#     1  2080       180     180  20.45455 2.045455
+#     2  2080       167     347  39.43182 1.971591
+#     3  2080       122     469  53.29545 1.776515
+#     4  2079       122     591  67.15909 1.678977
+#     5  2080        84     675  76.70455 1.534091
+#     6  2080        66     741  84.20455 1.403409
+#     7  2079        70     811  92.15909 1.316558
+#     8  2080        25     836  95.00000 1.187500
+#     9  2080        24     860  97.72727 1.085859
+#    10  2079        20     880 100.00000 1.000000
 
-#application score card
-data_score_card <- credit_card_regression
-colnames(data_score_card)
-data_score_card$prob_bad<- predict(final_model, type = "response", 
-                                   newdata = data_score_card[,-27])
-
-data_score_card$prob_good <- (1 - data_score_card$prob_bad)
-data_score_card$odds_good <- data_score_card$prob_good/data_score_card$prob_bad
-data_score_card$log_odds_good <- log(data_score_card$odds_good)
-
-factorOdds <- 20/log(2) # Odds to double 20 points
-factorOdds
-offset_factorOdds <- 400 - (factorOdds*log(10)) # 10:1 at a score of 400
-data_score_card$score <- offset_factorOdds + factorOdds * data_score_card$log_odds_good
-
-cut_off_score <- offset_factorOdds + factorOdds * log((1-0.049)/0.049)
-cut_off_score
-
-#plot of score card vs odds(good)
-ggplot(data = data_score_card, aes(x=odds_good,
-                                           y = score,
-                                           col = score)) + geom_line(size = 1.5)
-summary(data_score_card$score)
-
-#total number of good customers
-nrow(data_score_card[(data_score_card$score >= cut_off_score),]) 
-
-#total customers
-nrow(data_score_card)
-
-#misclassified rate
-
-data_score_card$pred_performance_tag <- ifelse(data_score_card$prob_bad >= 0.049,1,0)
-data_score_card$is_miss_classified <- ifelse(data_score_card$Performance.Tag != data_score_card$pred_performance_tag,1,0)
-miss_classified_percentage <- sum(data_score_card$is_miss_classified)/nrow(data_score_card) * 100
-miss_classified_percentage
-
-data_score_card$orig_outstanding_amount <- credit_card_eda$Outstanding.Balance
-
-
-#expected credit loss
-#Expected loss(c1) = PD * EAD * LGD
-#PD = Probability of defafault of each customer, EAD = Exposure at default or oustanding
-#LGD = Loss given default.
-#Lets assume if recovery likelihood is 30% then LDG = 1  - 0.30 = 0.7
-
-
-data_score_card$expected_loss = data_score_card$prob_bad * data_score_card$orig_outstanding_amount * 0.7
-
-total_expected_loass = sum(data_score_card$expected_loss)
-print(total_expected_loass)
-
-#auto rejection rate or 
-
-auto_rejection_rate <- sum(data_score_card$pred_performance_tag)/nrow(data_score_card)
-auto_approval_rate = 1 - auto_rejection_rate
-
-Credit_card_DT <- credit_card_eda[, -which(names(credit_card_eda) %in% c("IncomeRange", "Residence.Years", "Company.Years", "x_Avgas.CC.Utilization.in.last.12.months" ))]
-colnames(Credit_card_DT)
+#-------------------------------------------------
+#Data Modeling - Decision Tree
+#-------------------------------------------------
+Credit_card_DT <- credit_card_eda[, -which(names(credit_card_eda) %in% c("IncomeRange", "Residence.Years", "Company.Years", "x_Avgas.CC.Utilization.in.last.12.months", "AgeCategory" ))]
 numericcols <- c( "No.of.dependents" ,"Income" ,"No.of.months.in.current.residence" ,"No.of.months.in.current.company",                                
                   "No.of.times.90.DPD.or.worse.in.last.6.months" ,"No.of.times.60.DPD.or.worse.in.last.6.months"  ,                 
                   "No.of.times.30.DPD.or.worse.in.last.6.months", "No.of.times.90.DPD.or.worse.in.last.12.months"  ,                
@@ -1990,20 +1957,18 @@ numericcols <- c( "No.of.dependents" ,"Income" ,"No.of.months.in.current.residen
                   "No.of.trades.opened.in.last.12.months" , "No.of.PL.trades.opened.in.last.6.months"        ,                
                   "No.of.PL.trades.opened.in.last.12.months" , "No.of.Inquiries.in.last.6.months..excluding.home...auto.loans." ,
                   "No.of.Inquiries.in.last.12.months..excluding.home...auto.loans.", "Outstanding.Balance"     ,                                       
-                  "Total.No.of.Trades" )
+                  "Total.No.of.Trades" , "Age")
 
 
 
 factorcols <- c("Gender" ,"Marital.Status", "Education", "Profession", "Type.of.residence", 
-                "Presence.of.open.auto.loan" ,"Presence.of.open.home.loan" , "AgeCategory" )
+                "Presence.of.open.auto.loan" ,"Presence.of.open.home.loan" )
 
 Credit_card_DT[, numericcols] <- lapply(numericcols, function(x) as.numeric(as.character(Credit_card_DT[, x])))
 Credit_card_DT[, factorcols] <- lapply(factorcols, function(x) as.factor(as.character(Credit_card_DT[, x])))
 
-write.csv(Credit_card_DT, "Credit_card_DT.csv")
 # Let's split the data in training and test datasets.
 
-str(Credit_card_DT)
 split_indices <- sample.split(Credit_card_DT$Performance.Tag, SplitRatio = 0.70)
 train_dt <- Credit_card_DT[split_indices, ]
 test_dt <- Credit_card_DT[!split_indices, ]
@@ -2037,11 +2002,9 @@ rownames(conf.matrix) <- paste("Actual", rownames(conf.matrix), sep = ":")
 colnames(conf.matrix) <- paste("Pred", colnames(conf.matrix), sep = ":")
 print(conf.matrix)
 
-
-# Package required for randomForest algorithm is:
-# install randomForest
-library(randomForest)
-#---------------------------------------------------------    
+#-------------------------------------------------
+# Data Modeling - Random Forest
+#-------------------------------------------------
 
 # Spliting the bank data in 70:30 ratio
 
@@ -2052,17 +2015,13 @@ split_indices <- sample.split(Credit_card_RM$Performance.Tag, SplitRatio = 0.70)
 train_rf <- Credit_card_RM[split_indices, ]
 test_rf <- Credit_card_RM[!split_indices, ]
 
-#---------------------------------------------------------    
-
 # Building the model 
 
 creditcard_rf <- randomForest(Performance.Tag ~., data = train_rf, proximity = F, do.trace = T, mtry = 5)
 
 # Predict response for test data
 
-rf_pred <- predict(creditcard_rf, test_rf[, -27], type = "prob")
-
-#---------------------------------------------------------    
+rf_pred <- predict(creditcard_rf, test_rf[, -28], type = "prob")
 
 # Cutoff for randomforest to assign yes or no
 
@@ -2101,27 +2060,80 @@ box()
 
 legend(0,.50,col=c(2,"darkgreen",4,"darkred"),lwd=c(2,2,2,2),c("Sensitivity","Specificity","Accuracy"))
 min(abs(OUT_rf[,1]-OUT_rf[,2]))
-cutoff_rf <- s[which(abs(OUT_rf[,1]-OUT_rf[,2])<=0.038)]
+cutoff_rf <- s[which(abs(OUT_rf[,1]-OUT_rf[,2])<=0.063)]
 
 # The plot shows that cutoff value of around 05% optimises sensitivity and accuracy
 
-predicted_response <- factor(ifelse(rf_pred[, 2] >= 0.052, "yes", "no"))
+predicted_response <- factor(ifelse(rf_pred[, 2] >= 0.055, "yes", "no"))
 
-conf_forest <- confusionMatrix(predicted_response, test_rf[, 27], positive = "yes")
+conf_forest <- confusionMatrix(predicted_response, test_rf[, 28], positive = "yes")
 
 conf_forest
 
-# Sensitivity
-conf_forest$byClass[1]
-
-# Specificity 
-conf_forest$byClass[2]
-
-# Accuracy 
-conf_forest$overall[1]
-
+#				Accuracy : 0.6376         
+#       Sensitivity : 0.57727        
+#       Specificity : 0.64026        
 
 # Final RF important variables
 importance <- creditcard_rf$importance 
 
 importance <- data.frame(importance)
+
+#-------------------------------------------------
+# Model Deployment - Application Score Card
+#-------------------------------------------------
+data_score_card <- credit_card_regression
+colnames(data_score_card)
+data_score_card$prob_bad<- predict(final_model_LR, type = "response", 
+                                   newdata = data_score_card[,-27])
+
+data_score_card$prob_good <- (1 - data_score_card$prob_bad)
+data_score_card$odds_good <- data_score_card$prob_good/data_score_card$prob_bad
+data_score_card$log_odds_good <- log(data_score_card$odds_good)
+
+factorOdds <- 20/log(2) # Odds to double 20 points
+factorOdds
+offset_factorOdds <- 400 - (factorOdds*log(10)) # 10:1 at a score of 400
+data_score_card$score <- offset_factorOdds + factorOdds * data_score_card$log_odds_good
+
+cut_off_score <- offset_factorOdds + factorOdds * log((1-0.049)/0.049)
+cut_off_score
+
+#plot of score card vs odds(good)
+ggplot(data = data_score_card, aes(x=odds_good,
+                                   y = score,
+                                   col = score)) + geom_line(size = 1.5)
+summary(data_score_card$score)
+
+#total number of good customers
+nrow(data_score_card[(data_score_card$score >= cut_off_score),]) 
+
+#total customers
+nrow(data_score_card)
+
+#misclassified rate
+
+data_score_card$pred_performance_tag <- ifelse(data_score_card$prob_bad >= 0.049,1,0)
+data_score_card$is_miss_classified <- ifelse(data_score_card$Performance.Tag != data_score_card$pred_performance_tag,1,0)
+miss_classified_percentage <- sum(data_score_card$is_miss_classified)/nrow(data_score_card) * 100
+miss_classified_percentage
+
+data_score_card$orig_outstanding_amount <- credit_card_eda$Outstanding.Balance
+
+
+#expected credit loss
+#Expected loss(c1) = PD * EAD * LGD
+#PD = Probability of defafault of each customer, EAD = Exposure at default or oustanding
+#LGD = Loss given default.
+#Lets assume if recovery likelihood is 30% then LDG = 1  - 0.30 = 0.7
+
+
+data_score_card$expected_loss = data_score_card$prob_bad * data_score_card$orig_outstanding_amount * 0.7
+
+total_expected_loass = sum(data_score_card$expected_loss)
+print(total_expected_loass)
+
+#auto rejection rate or 
+
+auto_rejection_rate <- sum(data_score_card$pred_performance_tag)/nrow(data_score_card)
+auto_approval_rate = 1 - auto_rejection_rate
