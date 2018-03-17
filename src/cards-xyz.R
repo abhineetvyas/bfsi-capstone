@@ -1946,7 +1946,7 @@ default_decile
 #    10  2079        20     880 100.00000 1.000000
 
 #-------------------------------------------------
-#Data Modeling - Decision Tree
+# Data Modeling - Decision Tree
 #-------------------------------------------------
 Credit_card_DT <- credit_card_eda[, -which(names(credit_card_eda) %in% c("IncomeRange", "Residence.Years", "Company.Years", "x_Avgas.CC.Utilization.in.last.12.months", "AgeCategory" ))]
 numericcols <- c( "No.of.dependents" ,"Income" ,"No.of.months.in.current.residence" ,"No.of.months.in.current.company",                                
@@ -1959,8 +1959,6 @@ numericcols <- c( "No.of.dependents" ,"Income" ,"No.of.months.in.current.residen
                   "No.of.Inquiries.in.last.12.months..excluding.home...auto.loans.", "Outstanding.Balance"     ,                                       
                   "Total.No.of.Trades" , "Age")
 
-
-
 factorcols <- c("Gender" ,"Marital.Status", "Education", "Profession", "Type.of.residence", 
                 "Presence.of.open.auto.loan" ,"Presence.of.open.home.loan" )
 
@@ -1968,39 +1966,52 @@ Credit_card_DT[, numericcols] <- lapply(numericcols, function(x) as.numeric(as.c
 Credit_card_DT[, factorcols] <- lapply(factorcols, function(x) as.factor(as.character(Credit_card_DT[, x])))
 
 # Let's split the data in training and test datasets.
-
-split_indices <- sample.split(Credit_card_DT$Performance.Tag, SplitRatio = 0.70)
-train_dt <- Credit_card_DT[split_indices, ]
-test_dt <- Credit_card_DT[!split_indices, ]
-
 set.seed(3033)
 split_indices <- createDataPartition(y = Credit_card_DT$Performance.Tag, p= 0.7, list = FALSE)
 train_dt <- Credit_card_DT[split_indices,]
 test_dt <- Credit_card_DT[-split_indices,]
 anyNA(Credit_card_DT)
 
-trctrl <- trainControl(method = "repeatedcv", number = 10, repeats = 3)
-set.seed(3333)
-dtree_fit <- train(Performance.Tag ~ ., data = train_dt, method = "rpart",
-                   parms = list(split = "information"),
-                   trControl=trctrl,
-                   tuneLength = 10)
-dtree_fit
+tree.model1 <-  rpart(Performance.Tag ~ ., data=train_dt, method= "class", 
+                      control=rpart.control( minsplit=10,cp=0.0001))
+plot(tree.model1)
 
-#Plot Decision Tree
-prp(dtree_fit$finalModel, box.palette = "Reds", tweak = 1.2)
-dtree_fit$finalModel$variable.importance
+# Increasing the minsplit two fold to 20 
+tree.model2 <-  rpart(Performance.Tag ~ ., data=train_dt, method= "class", 
+                      control=rpart.control(minsplit=20, cp=0.0001))
+plot(tree.model2)
+tree.model2$variable.importance
 
-test_pred <- predict(dtree_fit, newdata = test_dt)
-confusionMatrix(test_pred, test_dt$Performance.Tag )  #check accuracy
+# We can further simplify the tree by increasing minsplit
+tree.model3 <-  rpart(Performance.Tag ~ ., data=train_dt, method= "class", 
+                      control=rpart.control(minsplit=30, minbucket = 15, cp=0.0001))
+plot(tree.model3)
 
-#Prune the tree using the best cp.
-tree.pruned <- prune(dtree_fit$finalModel, cp = 0.000324728)
-prp(tree.pruned, box.palette = "Reds", tweak = 1.2)
-conf.matrix <- table(train_dt$Performance.Tag, predict(tree.pruned,type="class"))
-rownames(conf.matrix) <- paste("Actual", rownames(conf.matrix), sep = ":")
-colnames(conf.matrix) <- paste("Pred", colnames(conf.matrix), sep = ":")
-print(conf.matrix)
+# Model Evaluation for tree.model2 and tree.model3
+# using test data from now on
+
+# tree.model2
+test_dt <- Credit_card_DT[-split_indices,]
+tree.model2_pred <- predict(tree.model2, test_dt[, -28], type = "class")
+
+tree.model2_pred <- ifelse(tree.model2_pred==1,"yes","no")
+test_dt$Performance.Tag <-ifelse(test_dt$Performance.Tag==1,"yes","no")
+
+confusionMatrix(tree.model2_pred, test_dt[, 28], positive = "yes")
+
+# tree.model3
+test_dt <- Credit_card_DT[-split_indices,]
+tree.model3_pred <- predict(tree.model3, test_dt[, -28], type = "class")
+
+tree.model3_pred <- ifelse(tree.model3_pred==1,"yes","no")
+test_dt$Performance.Tag <-ifelse(test_dt$Performance.Tag==1,"yes","no")
+
+confusionMatrix(tree.model3_pred, test_dt[, 28], positive = "yes")
+
+# Accuracy is 95.68%, sensitivity is very less
+
+# Sensitivity is again low here; we can improve the model quite a bit since logistic model has sensitivtiy around 65%
+# we should rather build a random forest instead, It will avoid ovetfitting.
 
 #-------------------------------------------------
 # Data Modeling - Random Forest
