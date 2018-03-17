@@ -1948,6 +1948,7 @@ default_decile
 #-------------------------------------------------
 # Data Modeling - Decision Tree
 #-------------------------------------------------
+str(credit_card_eda$Performance.Tag)
 Credit_card_DT <- credit_card_eda[, -which(names(credit_card_eda) %in% c("IncomeRange", "Residence.Years", "Company.Years", "x_Avgas.CC.Utilization.in.last.12.months", "AgeCategory" ))]
 numericcols <- c( "No.of.dependents" ,"Income" ,"No.of.months.in.current.residence" ,"No.of.months.in.current.company",                                
                   "No.of.times.90.DPD.or.worse.in.last.6.months" ,"No.of.times.60.DPD.or.worse.in.last.6.months"  ,                 
@@ -1975,6 +1976,8 @@ anyNA(Credit_card_DT)
 tree.model1 <-  rpart(Performance.Tag ~ ., data=train_dt, method= "class", 
                       control=rpart.control( minsplit=10,cp=0.0001))
 plot(tree.model1)
+
+stopCluster(cl)
 
 # Increasing the minsplit two fold to 20 
 tree.model2 <-  rpart(Performance.Tag ~ ., data=train_dt, method= "class", 
