@@ -1021,37 +1021,6 @@ chisq.test(cc_Total.No.of.Trades )
 # Prepare data for modeling
 #--------------------------------------------------------------------
 
-credit_card_num_vars <- data.frame(No.of.trades.opened.in.last.6.months, No.of.PL.trades.opened.in.last.6.months,
-                                  No.of.Inquiries.in.last.6.months,No.of.Inquiries.in.last.6.months,
-                                  Total.No.of.Trades, Income, No.of.months.in.current.residence, No.of.months.in.current.company,
-                                  Avgas.CC.Utilization.in.last.12.months,
-                                  No.of.trades.opened.in.last.12.months, Avgas.CC.Utilization.in.last.12.months,
-                                  No.of.trades.opened.in.last.12.months, No.of.PL.trades.opened.in.last.12.months,
-                                  No.of.Inquiries.in.last.12.months, Outstanding.Balance,
-                                  No.of.times.30.DPD.or.worse.in.last.6.months, No.of.times.90.DPD.or.worse.in.last.6.months,
-                                  No.of.times.60.DPD.or.worse.in.last.6.months, No.of.times.30.DPD.or.worse.in.last.12.months,
-                                  No.of.times.90.DPD.or.worse.in.last.12.months, No.of.times.60.DPD.or.worse.in.last.12.months)
-
-# We have following categorical variables
-Gender <- as.factor(credit_card_eda$Gender)                         
-No.of.dependents <- as.factor(credit_card_eda$No.of.dependents)
-Education  <- as.factor(credit_card_eda$Education)
-Type.of.residence <- as.factor(credit_card_eda$Type.of.residence)
-Presence.of.open.home.loan <- as.factor(credit_card_eda$Presence.of.open.home.loan)
-AgeCategory <- as.factor(credit_card_eda$AgeCategory)
-Marital.Status <- as.factor(credit_card_eda$Marital.Status)
-Profession <- as.factor(credit_card_eda$Profession)
-Presence.of.open.auto.loan <- as.factor(credit_card_eda$Presence.of.open.auto.loan)
-
-credit_card_fact <- data.frame(Gender, No.of.dependents, Education, Type.of.residence,
-                               Presence.of.open.home.loan, AgeCategory,
-                               Marital.Status, Profession, Presence.of.open.auto.loan)
-credit_card_final<- cbind(credit_card_num_vars,credit_card_fact)
-credit_card_final$Performance.Tag <- credit_card_eda$Performance.Tag
-
-#IV calculation, WOE analysis and imputation if required
-colnames(credit_card_eda)
-
 credit_card_woe_data <- credit_card_eda[, -which(names(credit_card_eda) %in% c("IncomeRange", "Residence.Years", "Company.Years", "x_Avgas.CC.Utilization.in.last.12.months" ))]
 
 credit_card_woe_data$Performance.Tag <- as.numeric(levels(credit_card_woe_data$Performance.Tag))[credit_card_woe_data$Performance.Tag]
