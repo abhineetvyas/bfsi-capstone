@@ -5,9 +5,7 @@
 #---------------------------------------------------------
 
 #Set the working directory
-setwd("D:/Abhineet/Study/IIIT-B/7. Capstone Project/1. Capstone-BFS")
-
-#install.packages("knitr")
+#setwd("D:/Abhineet/Study/IIIT-B/7. Capstone Project/1. Capstone-BFS")
 
 library(MASS)
 library(car)
@@ -31,16 +29,16 @@ library(caret)
 #-------------------------------------------------------
 #Synopsis:
 #-------------------------------------------------------
-#  CredX is a leading credit card provider that gets thousands of credit card applicants every year. 
+#  CredX is a lending credit card provider that gets thousands of credit card applicants every year. 
 #  But in the past few years, it has experienced an increase in credit loss.
 
 #------------------------------------------------------------------------
 #Business Objective: Delinquent vs default customers  [problem statement]
 #------------------------------------------------------------------------
-#  As We are that credit X it has experienced an increase in credit loss. The CEO believes that
+#  Cred X has experienced an increase in credit loss. The CEO believes that
 #  the best strategy to mitigate credit risk is to 'acquire the right customers'.
-#  In this project our job is to Help CredX identify right applicants to provide credit cards to by 
-#  using predictive models i.e. 
+#  In this project our job is to help Cred X identify right applicants to provide credit cards  by 
+#  using predictive modelling techniques i.e. 
 #  1.by determining the factors affecting credit risk
 #  2. Create strategies to mitigate the acquisition risk and 
 #  3. assess the financial benefit increasing the profitability of credit cards.
@@ -66,39 +64,38 @@ library(caret)
 # 4. Feature selection
      #4.1 Chi-square test for feature selection for categorical variables
      #4.2 IV test for feature selection for continuous  variables
+     #4.3 During feature selection, we would also revisit the data preparation step to scale the data with WOE values
+     #4.4 Also fine and coarse classing is performed during data WOE analysis of respective variables
 # 4. Data Modeling - Prepare the below  different models
-     #4.1 logistic regression - start with it
+     #4.1 logistic regression
+          #4.1.1 Demographic data model
+          #4.1.2 Mmerge data model (Demographic + credit score data)
      #4.2 Decision tree
      #4.3 random forest
      
 # 5. Model Evaluation - select the best model based on the below criteria
-      #Accuracy,Sensitivity, Specificity of the model
-      #KS statistics
-      #Application score card based on the probability
-      #vintage curve
+      #5.1 Accuracy,Sensitivity, Specificity of the model
+      #5.2 KS statistics - Lift and Gain chart
+      #5.3.Application score card based on the probability
+     
 # 6. Model Deployment & acessing financial benefit of the  project :
+    #6.1 the potential average credit loss per default and then overall potential average credit loss
+    #6.2 Auto approval and rejection rate
+    #6.3 Recommendations to avoid the potential credit loss avoided with the help of the model
 
-# a.The implications of using the model for auto approval or rejection, i.e. how many applicants on 
-#    an average would the model automatically approve or reject.
-
-# b.The potential credit loss avoided with the help of the model
 
 #----------------------------------------------------
 # 1. Business understanding
 #----------------------------------------------------
 #  With the large potential profit in credit card banking also comes the risk of customers not paying
 #  off their credit card balance. As CredX seeks to expand, it is important that they exercise good risk
-#  control- because while they  try to expand their customer base , in the run acquire certain risky customers .
+#  control- because while they  try to expand their customer base ,also in the run, acquire certain risky customers 
 #  a) There may be certain customers who are habitual defaulters from DPD - but eventually pay - 
 #     These are 'medium risk- high revenue' customers
 #  b) There may be certain customers who are regularly pay within due date -they are' low risk - low revenue' 
 #  c) There may be certain customers who are non paying customers - These are 'high risk- no revenue' and high credit loss customers.
-#  Customers of category medium risk need are the right of customers to be acquired , Low risk are good to have
-#  to increase the customer base but they are not high revenue customers ( as revenue stream from them is 
-#  limited to only transactional costs) ,Medium risk customers are generally higher revenue customers - revenue
-#  from whom is transactional cost+ late fee/interest earned  - while  completely high risk customers need to
-#  be avoided as they major contributors to credit loss to the credit card company.
-
+#  Customers of category 'medium risk',are the right customers to be acquired, Low risk are good to 
+#  to increase the customer base but they are not high revenue customers 
 #----------------------------------------------------
 #  2. Data Understanding - EDA
 # Data set provided is in terms of two files :
@@ -182,14 +179,12 @@ credit_card_applications <- merge(x = demographic_data, y = credit_bureau_data, 
 credit_card_applications$Performance.Tag <- credit_card_applications$Performance.Tag.x
 credit_card_applications <- credit_card_applications[ , !(names(credit_card_applications) %in% c("Performance.Tag.x","Performance.Tag.y"))]
 write.csv(credit_card_applications, "credit_card_applications.csv")
-#compute correlation matrix of entire data set
-#corr_res <- cor(credit_card_applications)
-#round(corr_res, 2)
+
 #-----------------------------------------------------------------------------------------------------
 
 str(credit_card_applications)
 #----------------------------------------------------
-# Data Cleaning -& Preparation & Univariate Analysis. 
+# Data Understanding - Univariate Analysis. 
 #----------------------------------------------------
 credit_card_eda <- credit_card_applications
 credit_card_eda$Performance.Tag <- as.factor(credit_card_eda$Performance.Tag)
@@ -200,9 +195,9 @@ credit_card_eda <- credit_card_eda[ , !(names(credit_card_eda) %in% c("Applicati
 
 #2. Age
 unique(credit_card_eda$Age)
-# as age 0 and -3 are invalid age we can remove these inavid records
+# as age 0 and -3 are invalid age we can remove these invalid records
 credit_card_eda <- credit_card_eda[!credit_card_eda$Age %in% c(0,-3),]
-summary(credit_card_eda$Age)
+
 # Age range is 15 to 65 let's categorize the age groups Youth (15-24 years), Adults (25-64 years), Seniors (65 years and over)
 # create same category in dataset
 credit_card_eda$AgeCategory <- cut(credit_card_eda$Age, 
@@ -214,8 +209,7 @@ credit_card_eda <- credit_card_eda[ , !(names(credit_card_eda) %in% c("Age"))]
 # check the distribution
 ggplot(data = credit_card_eda, aes(x=AgeCategory)) + 
   geom_histogram(stat = "count")
-# looking at the distribution it looks like more CC is distributed to adults
-
+# looking at the distribution it looks like more Credit cards are distributed to adults
 
 #3. Gender
 unique(credit_card_eda$Gender)
@@ -232,7 +226,7 @@ unique(credit_card_eda$Marital.Status)
 credit_card_eda <- credit_card_eda[!credit_card_eda$Marital.Status %in% c(""),]
 ggplot(data = credit_card_eda, aes(x=Marital.Status)) + 
   geom_histogram(stat = "count")
-# looking at the distribution it looks like more CC is distributed more for Married
+# looking at the distribution it looks like more credit cards are distributed for Married
 
 #5. No.of.dependents
 unique(credit_card_eda$No.of.dependents)
@@ -254,7 +248,7 @@ credit_card_eda$IncomeRange <- cut(credit_card_eda$Income,
                                    right = FALSE)
 ggplot(data = credit_card_eda, aes(x=IncomeRange)) + 
   geom_histogram(stat = "count")
-# looking at the distribution one important point captured is that CC distribution 
+# looking at the distribution one important point captured is that credit card distribution 
 #   is more for Low income range comparision to UpperMiddle
 
 #7. Education
@@ -263,8 +257,8 @@ unique(credit_card_eda$Education)
 credit_card_eda <- credit_card_eda[!credit_card_eda$Education %in% c(""),]
 ggplot(data = credit_card_eda, aes(x=Education)) + 
   geom_histogram(stat = "count")
-# looking at the distribution it looks like more CC is distributed less for Phd holders compare to batchlor and Master
-# also cc is dirtibuted more toward professionals.
+# looking at the distribution it looks like more credit cards are distributed less for Phd holders compare to bachelor and Master
+# also credit cards are dirtibuted more toward professionals.
 
 #8. Profession
 unique(credit_card_eda$Profession)
@@ -272,7 +266,7 @@ unique(credit_card_eda$Profession)
 credit_card_eda <- credit_card_eda[!credit_card_eda$Profession %in% c(""),]
 ggplot(data = credit_card_eda, aes(x=Profession)) + 
   geom_histogram(stat = "count")
-# looking at the distribution it looks like more CC is distributed more to salaried people.
+# looking at the distribution it looks like more credit cards are distributed  to salaried people.
 
 #9. Type.of.residence
 unique(credit_card_eda$Type.of.residence)
@@ -280,7 +274,7 @@ unique(credit_card_eda$Type.of.residence)
 credit_card_eda <- credit_card_eda[!credit_card_eda$Type.of.residence %in% c(""),]
 ggplot(data = credit_card_eda, aes(x=Type.of.residence)) + 
   geom_histogram(stat = "count")
-# looking at the distribution it looks like more CC is distributed for people having rented accomodation.
+# looking at the distribution it looks like more credit cards are distributed for people having rented accomodation.
 
 #10. No.of.months.in.current.residence
 unique(credit_card_eda$No.of.months.in.current.residence)
@@ -291,7 +285,7 @@ credit_card_eda$Residence.Years <- cut(credit_card_eda$No.of.months.in.current.r
                                    right = FALSE)
 ggplot(data = credit_card_eda, aes(x=Residence.Years)) + 
   geom_histogram(stat = "count")
-# looking at the distribution it looks like more CC is distributed for 
+# looking at the distribution it looks like credit cards are distributed for 
 #   people staying at current residents less than 2 years
 
 #11. No.of.months.in.current.company
@@ -303,7 +297,7 @@ credit_card_eda$Company.Years <- cut(credit_card_eda$No.of.months.in.current.com
                                        right = FALSE)
 ggplot(data = credit_card_eda, aes(x=Company.Years)) + 
   geom_histogram(stat = "count")
-# looking at the distribution it looks like more CC is distributed for 
+# looking at the distribution it looks like more credit cards are distributed for 
 #   ploples working at same company between 2-5 years
 
 #12. No.of.times.90.DPD.or.worse.in.last.6.months
@@ -411,7 +405,7 @@ ggplot(data = credit_card_eda, aes(x=Presence.of.open.auto.loan)) +
   geom_histogram(stat = "count")
 
 #--------------------------------------------------
-# Bivariate Analysis
+# Data Understanding - Bivariate Analysis
 #--------------------------------------------------
 
 plot_grid(ggplot(data = credit_card_eda, aes(x=Education, fill = Performance.Tag)) + 
@@ -565,12 +559,12 @@ plot_grid(
 )
 
 
-credit_card_eda_30DPD_6 <-  summarise(credit_card_eda_30DPD_grp_6,AvgIncome = mean(Income))
-credit_card_eda_60DPD_6 <-  summarise(credit_card_eda_60DPD_grp_6,AvgIncome = mean(Income))
-credit_card_eda_90DPD_6 <-  summarise(credit_card_eda_90DPD_grp_6,AvgIncome = mean(Income))
-credit_card_eda_30DPD_12 <-  summarise(credit_card_eda_30DPD_grp_12,AvgIncome = mean(Income))
-credit_card_eda_60DPD_12 <-  summarise(credit_card_eda_60DPD_grp_12,AvgIncome = mean(Income))
-credit_card_eda_90DPD_12 <-  summarise(credit_card_eda_90DPD_grp_12,AvgIncome = mean(Income))
+credit_card_eda_30DPD_6 <-  summarise(credit_card_eda_30DPD_grp_6,AvgIncome = median(Income))
+credit_card_eda_60DPD_6 <-  summarise(credit_card_eda_60DPD_grp_6,AvgIncome = median(Income))
+credit_card_eda_90DPD_6 <-  summarise(credit_card_eda_90DPD_grp_6,AvgIncome = median(Income))
+credit_card_eda_30DPD_12 <-  summarise(credit_card_eda_30DPD_grp_12,AvgIncome = median(Income))
+credit_card_eda_60DPD_12 <-  summarise(credit_card_eda_60DPD_grp_12,AvgIncome = median(Income))
+credit_card_eda_90DPD_12 <-  summarise(credit_card_eda_90DPD_grp_12,AvgIncome = median(Income))
 
 plot_grid(
   ggplot(data = credit_card_eda_30DPD_6, aes(x=No.of.times.30.DPD.or.worse.in.last.6.months,
@@ -610,51 +604,13 @@ box_theme_y<- theme(axis.line.y=element_blank(),axis.title.y=element_blank(),
                     legend.position="none")
 
 
-#Box plot for DPD values 
-plot_grid(ggplot(credit_card_applications, aes(x=Performance.Tag,y=No.of.times.90.DPD.or.worse.in.last.6.months, fill=Performance.Tag))+ geom_boxplot(width=0.2)+
-            coord_flip() + box_theme_y,
-          ggplot(credit_card_applications, aes(x=Performance.Tag,y=No.of.times.90.DPD.or.worse.in.last.12.months, fill=Performance.Tag))+ geom_boxplot(width=0.2)+
-            coord_flip() + box_theme_y,
-          ggplot(credit_card_applications, aes(x=Performance.Tag,y=No.of.times.60.DPD.or.worse.in.last.6.months, fill=Performance.Tag))+ geom_boxplot(width=0.2)+
-            coord_flip() + box_theme_y,
-          ggplot(credit_card_applications, aes(x=Performance.Tag,y=No.of.times.60.DPD.or.worse.in.last.12.months, fill=Performance.Tag))+ geom_boxplot(width=0.2)+
-            coord_flip() + box_theme_y,
-          ggplot(credit_card_applications, aes(x=Performance.Tag,y=No.of.times.30.DPD.or.worse.in.last.6.months, fill=Performance.Tag))+ geom_boxplot(width=0.2)+
-            coord_flip() + box_theme_y,
-          ggplot(credit_card_applications, aes(x=Performance.Tag,y=No.of.times.30.DPD.or.worse.in.last.12.months, fill=Performance.Tag))+ geom_boxplot(width=0.2)+
-            coord_flip() + box_theme_y,
-          align = "v",nrow = 4)
-
-
-
-#Box plot for numerical categorial variables
-#--------------------------------------------
-credit_card_applications$Age <- as.numeric(credit_card_applications$Age)
-plot_grid(ggplot(credit_card_applications, aes(x=Performance.Tag,y=Income, fill=Performance.Tag))+ geom_boxplot(width=0.2)+ 
-            coord_flip() +theme(legend.position="none"),
-          ggplot(credit_card_applications, aes(x=Performance.Tag,y=No.of.dependents, fill=Performance.Tag))+ geom_boxplot(width=0.2)+
-            coord_flip() + box_theme_y,
-          ggplot(credit_card_applications, aes(x=Performance.Tag,y=Age, fill=Performance.Tag))+ geom_boxplot(width=0.2)+
-            coord_flip() + box_theme_y,
-          ggplot(credit_card_applications, aes(x=Performance.Tag,y=Presence.of.open.home.loan, fill=Performance.Tag))+ geom_boxplot(width=0.2)+
-            coord_flip() + box_theme_y,
-          ggplot(credit_card_applications, aes(x=Performance.Tag,y=Presence.of.open.auto.loan, fill=Performance.Tag))+ geom_boxplot(width=0.2)+
-            coord_flip() + box_theme_y,
-          align = "v",nrow = 4)
-#variable Presence.of.open.auto.loan and Presence.of.open.home.loan are insigficant as they do not have any impact on the default
-#variable Age and 'No.of.dependents' are both insignificants as they default and non-default have the same data range
-#variable seems to be significant as maximum default occurs around the range 20 to 25 and it has no outlier
-
 # Histogram and Boxplots for numeric variables
 # --------------------------------------------
-str(credit_card_applications)
-
 
 #No.of.months.in.current.residence
 plot_grid(ggplot(credit_card_applications, aes(No.of.months.in.current.residence,fill = Performance.Tag))+ geom_histogram(binwidth = 10),
           ggplot(credit_card_applications, aes(x="",y=No.of.months.in.current.residence))+ geom_boxplot(width=0.1)+coord_flip()+box_theme, 
           align = "v",ncol = 1)
-
 
 
 #No.of.months.in.current.company
