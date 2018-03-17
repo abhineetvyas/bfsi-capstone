@@ -25,6 +25,9 @@ library(data.table)
 library(ROCR)
 library(pROC) 
 library(caret)
+library(rpart)
+library(rattle)
+library(rpart.plot)
 
 #-------------------------------------------------------
 #Synopsis:
@@ -188,6 +191,12 @@ str(credit_card_applications)
 #----------------------------------------------------
 credit_card_eda <- credit_card_applications
 credit_card_eda$Performance.Tag <- as.factor(credit_card_eda$Performance.Tag)
+box_theme<- theme(axis.line=element_blank(),axis.title=element_blank(), 
+                  axis.ticks=element_blank(), axis.text=element_blank())
+
+box_theme_y<- theme(axis.line.y=element_blank(),axis.title.y=element_blank(), 
+                    axis.ticks.y=element_blank(), axis.text.y=element_blank(),
+                    legend.position="none")
 
 #1. Application.ID
 # As we know the application id is unique identifier for application of credit card so we can very well remove it.
@@ -237,7 +246,6 @@ ggplot(data = credit_card_eda, aes(x=No.of.dependents)) +
 # looking at the distribution it looks like more CC is distributed for 1-3 dependents
 
 #6. Income
-summary(credit_card_eda$Income)
 # in dataset some of the Income are -0.5 and 0 which is invalid we can remove invalid data
 credit_card_eda <- credit_card_eda[!credit_card_eda$Income %in% c(-0.5,0),]
 ggplot(data = credit_card_eda, aes(y=Income, x= Performance.Tag)) + 
@@ -278,27 +286,33 @@ ggplot(data = credit_card_eda, aes(x=Type.of.residence)) +
 
 #10. No.of.months.in.current.residence
 unique(credit_card_eda$No.of.months.in.current.residence)
-summary(credit_card_eda$No.of.months.in.current.residence)
 credit_card_eda$Residence.Years <- cut(credit_card_eda$No.of.months.in.current.residence, 
                                    breaks = c(-Inf, 25, 61, Inf), 
                                    labels = c("< 2 Years", "2-5 Years", "> 5 Years"), 
                                    right = FALSE)
 ggplot(data = credit_card_eda, aes(x=Residence.Years)) + 
   geom_histogram(stat = "count")
+
+plot_grid(ggplot(credit_card_applications, aes(No.of.months.in.current.residence,fill = Performance.Tag))+ geom_histogram(binwidth = 10),
+          ggplot(credit_card_applications, aes(x="",y=No.of.months.in.current.residence))+ geom_boxplot(width=0.1)+coord_flip()+box_theme, 
+          align = "v",ncol = 1)
 # looking at the distribution it looks like credit cards are distributed for 
 #   people staying at current residents less than 2 years
 
 #11. No.of.months.in.current.company
 unique(credit_card_eda$No.of.months.in.current.company)
-summary(credit_card_eda$No.of.months.in.current.company)
 credit_card_eda$Company.Years <- cut(credit_card_eda$No.of.months.in.current.company, 
                                        breaks = c(-Inf, 25, 61, Inf), 
                                        labels = c("< 2 Years", "2-5 Years", "> 5 Years"), 
                                        right = FALSE)
 ggplot(data = credit_card_eda, aes(x=Company.Years)) + 
   geom_histogram(stat = "count")
+
+plot_grid(ggplot(credit_card_applications, aes(No.of.months.in.current.company,fill = Performance.Tag))+ geom_histogram(binwidth = 12, colour='blue'),
+          ggplot(credit_card_applications, aes(x="",y=No.of.months.in.current.company))+ geom_boxplot(width=0.1)+coord_flip()+box_theme, 
+          align = "v",ncol = 1)
 # looking at the distribution it looks like more credit cards are distributed for 
-#   ploples working at same company between 2-5 years
+#   peoples working at same company between 2-5 years
 
 #12. No.of.times.90.DPD.or.worse.in.last.6.months
 unique(credit_card_eda$No.of.times.90.DPD.or.worse.in.last.6.months)
@@ -331,7 +345,6 @@ ggplot(data = credit_card_eda, aes(x=No.of.times.30.DPD.or.worse.in.last.12.mont
   geom_histogram(stat = "count")
 
 #18. Avgas.CC.Utilization.in.last.12.months
-summary(credit_card_eda$Avgas.CC.Utilization.in.last.12.months)
 
 # 1020 records having NA's it means it requires treatment
 # for these cases replacing the same with median value or WOE Value 
@@ -343,44 +356,69 @@ H <- 1.5 * IQR(x_Avgas.CC.Utilization.in.last.12.months, na.rm = T)
 x_Avgas.CC.Utilization.in.last.12.months[x_Avgas.CC.Utilization.in.last.12.months < (qnt[1] - H)] <- caps[1]
 x_Avgas.CC.Utilization.in.last.12.months[x_Avgas.CC.Utilization.in.last.12.months > (qnt[2] + H)] <- caps[2]
 credit_card_eda$x_Avgas.CC.Utilization.in.last.12.months <- x_Avgas.CC.Utilization.in.last.12.months
-summary(credit_card_eda$Avgas.CC.Utilization.in.last.12.months)
 ggplot(data = credit_card_eda, aes(y=Avgas.CC.Utilization.in.last.12.months, x= Performance.Tag)) + 
   geom_boxplot()
+
+plot_grid(ggplot(credit_card_eda, aes(Avgas.CC.Utilization.in.last.12.months,fill = Performance.Tag))+ geom_histogram(binwidth = 10, colour='blue'),
+          ggplot(credit_card_eda, aes(x="",y=Avgas.CC.Utilization.in.last.12.months))+ geom_boxplot(width=0.1)+coord_flip()+box_theme, 
+          align = "v",ncol = 1)
+
 # Avgas.CC.Utilization.in.last.12.months looks strong predictor for the performance tag 
 
 #19. No.of.trades.opened.in.last.6.months
-summary(credit_card_eda$No.of.trades.opened.in.last.6.months)
+
 # 1 Na can be removed
 credit_card_eda <- credit_card_eda[!is.na(credit_card_eda$No.of.trades.opened.in.last.6.months),]
 ggplot(data = credit_card_eda, aes(x=No.of.trades.opened.in.last.6.months)) + 
   geom_histogram(stat = "count")
+plot_grid(ggplot(credit_card_applications, aes(No.of.trades.opened.in.last.6.months,fill = Performance.Tag))+ geom_histogram(binwidth = 1, colour='blue'),
+          ggplot(credit_card_applications, aes(x="",y=No.of.trades.opened.in.last.6.months))+ geom_boxplot(width=0.1)+coord_flip()+box_theme, 
+          align = "v",ncol = 1)
 
 #20. No.of.trades.opened.in.last.12.months
-summary(credit_card_eda$No.of.trades.opened.in.last.12.months)
+
 credit_card_eda <- credit_card_eda[!is.na(credit_card_eda$No.of.trades.opened.in.last.6.months),]
 ggplot(data = credit_card_eda, aes(x=No.of.trades.opened.in.last.12.months)) + 
   geom_histogram(stat = "count")
 
+plot_grid(ggplot(credit_card_eda, aes(No.of.trades.opened.in.last.12.months ,fill = Performance.Tag))+ geom_histogram(binwidth = 1, colour='blue'),
+          ggplot(credit_card_eda, aes(x="",y=No.of.trades.opened.in.last.12.months))+ geom_boxplot(width=0.1)+coord_flip()+box_theme, 
+          align = "v",ncol = 1)
+
 #21. No.of.PL.trades.opened.in.last.6.months
-summary(credit_card_eda$No.of.PL.trades.opened.in.last.6.months)
 ggplot(data = credit_card_eda, aes(x=No.of.PL.trades.opened.in.last.6.months)) + 
   geom_histogram(stat = "count")
+
+plot_grid(ggplot(credit_card_eda, aes(No.of.PL.trades.opened.in.last.6.months ,fill = Performance.Tag))+ geom_histogram(binwidth = 1, colour='blue'),
+          ggplot(credit_card_eda, aes(x="",y=No.of.PL.trades.opened.in.last.6.months))+ geom_boxplot(width=0.1)+coord_flip()+box_theme, 
+          align = "v",ncol = 1)
 
 #22. No.of.PL.trades.opened.in.last.12.months
 unique(credit_card_eda$No.of.PL.trades.opened.in.last.12.months)
 ggplot(data = credit_card_eda, aes(x=No.of.PL.trades.opened.in.last.12.months)) + 
   geom_histogram(stat = "count")
 
+plot_grid(ggplot(credit_card_eda, aes(No.of.PL.trades.opened.in.last.12.months ,fill = Performance.Tag))+ geom_histogram(binwidth = 1, colour='blue'),
+          ggplot(credit_card_eda, aes(x="",y=No.of.PL.trades.opened.in.last.12.months))+ geom_boxplot(width=0.1)+coord_flip()+box_theme, 
+          align = "v",ncol = 1)
+
 #23. No.of.Inquiries.in.last.6.months..excluding.home...auto.loans.
 unique(credit_card_eda$No.of.Inquiries.in.last.6.months..excluding.home...auto.loans.)
 ggplot(data = credit_card_eda, aes(x=No.of.Inquiries.in.last.6.months..excluding.home...auto.loans.)) + 
   geom_histogram(stat = "count")
 
+plot_grid(ggplot(credit_card_eda, aes(No.of.Inquiries.in.last.6.months..excluding.home...auto.loans. ,fill = Performance.Tag))+ geom_histogram(binwidth = 1, colour='blue'),
+          ggplot(credit_card_eda, aes(x="",y=No.of.Inquiries.in.last.6.months..excluding.home...auto.loans.))+ geom_boxplot(width=0.1)+coord_flip()+box_theme, 
+          align = "v",ncol = 1)
 
 #24. No.of.Inquiries.in.last.12.months..excluding.home...auto.loans.
 unique(credit_card_eda$No.of.Inquiries.in.last.12.months..excluding.home...auto.loans.)
 ggplot(data = credit_card_eda, aes(x=No.of.Inquiries.in.last.12.months..excluding.home...auto.loans.)) + 
   geom_histogram(stat = "count")
+
+plot_grid(ggplot(credit_card_eda, aes(No.of.Inquiries.in.last.12.months..excluding.home...auto.loans. ,fill = Performance.Tag))+ geom_histogram(binwidth = 1, colour='blue'),
+          ggplot(credit_card_eda, aes(x="",y=No.of.Inquiries.in.last.12.months..excluding.home...auto.loans.))+ geom_boxplot(width=0.1)+coord_flip()+box_theme, 
+          align = "v",ncol = 1)
 
 #25. Presence.of.open.home.loan
 unique(credit_card_eda$Presence.of.open.home.loan)
@@ -389,15 +427,21 @@ ggplot(data = credit_card_eda, aes(x=Presence.of.open.home.loan)) +
   geom_histogram(stat = "count")
 
 #26. Outstanding.Balance
-summary(credit_card_eda$Outstanding.Balance)
 ggplot(data = credit_card_eda, aes(y=Outstanding.Balance, x= Performance.Tag)) + 
   geom_boxplot()
 ## Looks  like people with higher outstanding balance are more of defaulters.
+credit_card_eda$Outstanding.Balance.in.lakh <- credit_card_eda$Outstanding.Balance/100000
+plot_grid(ggplot(credit_card_eda, aes(Outstanding.Balance.in.lakh ,fill = Performance.Tag))+ geom_histogram(binwidth = 5, colour='blue'),
+          ggplot(credit_card_eda, aes(x="",y=Outstanding.Balance.in.lakh))+ geom_boxplot(width=0.1)+coord_flip()+box_theme, 
+          align = "v",ncol = 1)
 
 #27. Total.No.of.Trades
-summary(credit_card_eda$Total.No.of.Trades)
 ggplot(data = credit_card_eda, aes(x=Total.No.of.Trades)) + 
   geom_histogram(stat = "count")
+
+plot_grid(ggplot(credit_card_eda, aes(Total.No.of.Trades ,fill = Performance.Tag))+ geom_histogram(binwidth = 5, colour='blue'),
+          ggplot(credit_card_eda, aes(x="",y=Total.No.of.Trades))+ geom_boxplot(width=0.1)+coord_flip()+box_theme, 
+          align = "v",ncol = 1)
 
 #28. Presence.of.open.auto.loan
 unique(credit_card_eda$Presence.of.open.auto.loan)
@@ -592,114 +636,26 @@ plot_grid(
                                               col = Performance.Tag)) + geom_line(size = 1.5)
 )
 
-#----------------------------------------------------------------------------------
-#IMP - Yet to merge
-#----------------------------------------------------------------------------------
-
-box_theme<- theme(axis.line=element_blank(),axis.title=element_blank(), 
-                  axis.ticks=element_blank(), axis.text=element_blank())
-
-box_theme_y<- theme(axis.line.y=element_blank(),axis.title.y=element_blank(), 
-                    axis.ticks.y=element_blank(), axis.text.y=element_blank(),
-                    legend.position="none")
-
-
-# Histogram and Boxplots for numeric variables
-# --------------------------------------------
-
-#No.of.months.in.current.residence
-plot_grid(ggplot(credit_card_applications, aes(No.of.months.in.current.residence,fill = Performance.Tag))+ geom_histogram(binwidth = 10),
-          ggplot(credit_card_applications, aes(x="",y=No.of.months.in.current.residence))+ geom_boxplot(width=0.1)+coord_flip()+box_theme, 
-          align = "v",ncol = 1)
-
-
-#No.of.months.in.current.company
-plot_grid(ggplot(credit_card_applications, aes(No.of.months.in.current.company,fill = Performance.Tag))+ geom_histogram(binwidth = 12, colour='blue'),
-          ggplot(credit_card_applications, aes(x="",y=No.of.months.in.current.company))+ geom_boxplot(width=0.1)+coord_flip()+box_theme, 
-          align = "v",ncol = 1)
-
-
-#Avgas.CC.Utilization.in.last.12.months
-plot_grid(ggplot(credit_card_applications, aes(Avgas.CC.Utilization.in.last.12.months,fill = Performance.Tag))+ geom_histogram(binwidth = 10, colour='blue'),
-          ggplot(credit_card_applications, aes(x="",y=Avgas.CC.Utilization.in.last.12.months))+ geom_boxplot(width=0.1)+coord_flip()+box_theme, 
-          align = "v",ncol = 1)
-#No.of.trades.opened.in.last.6.months
-plot_grid(ggplot(credit_card_applications, aes(No.of.trades.opened.in.last.6.months,fill = Performance.Tag))+ geom_histogram(binwidth = 1, colour='blue'),
-          ggplot(credit_card_applications, aes(x="",y=No.of.trades.opened.in.last.6.months))+ geom_boxplot(width=0.1)+coord_flip()+box_theme, 
-          align = "v",ncol = 1)
-
-#No.of.trades.opened.in.last.12.months 
-plot_grid(ggplot(credit_card_applications, aes(No.of.trades.opened.in.last.12.months ,fill = Performance.Tag))+ geom_histogram(binwidth = 1, colour='blue'),
-          ggplot(credit_card_applications, aes(x="",y=No.of.trades.opened.in.last.12.months))+ geom_boxplot(width=0.1)+coord_flip()+box_theme, 
-          align = "v",ncol = 1)
-
-#No.of.PL.trades.opened.in.last.6.months 
-plot_grid(ggplot(credit_card_applications, aes(No.of.PL.trades.opened.in.last.6.months ,fill = Performance.Tag))+ geom_histogram(binwidth = 1, colour='blue'),
-          ggplot(credit_card_applications, aes(x="",y=No.of.PL.trades.opened.in.last.6.months))+ geom_boxplot(width=0.1)+coord_flip()+box_theme, 
-          align = "v",ncol = 1)
-
-#No.of.PL.trades.opened.in.last.12.months 
-plot_grid(ggplot(credit_card_applications, aes(No.of.PL.trades.opened.in.last.12.months ,fill = Performance.Tag))+ geom_histogram(binwidth = 1, colour='blue'),
-          ggplot(credit_card_applications, aes(x="",y=No.of.PL.trades.opened.in.last.12.months))+ geom_boxplot(width=0.1)+coord_flip()+box_theme, 
-          align = "v",ncol = 1)
-
-#No.of.Inquiries.in.last.6.months..excluding.home...auto.loans. 
-#Since the name is long it is renamed as No.of.Inquiries.in.last.6.months
-names(credit_card_applications)[names(credit_card_applications) == 'No.of.Inquiries.in.last.6.months..excluding.home...auto.loans.'] <- 'No.of.Inquiries.in.last.6.months'
-plot_grid(ggplot(credit_card_applications, aes(No.of.Inquiries.in.last.6.months ,fill = Performance.Tag))+ geom_histogram(binwidth = 1, colour='blue'),
-          ggplot(credit_card_applications, aes(x="",y=No.of.Inquiries.in.last.6.months))+ geom_boxplot(width=0.1)+coord_flip()+box_theme, 
-          align = "v",ncol = 1)
-
-#No.of.Inquiries.in.last.12.months..excluding.home...auto.loans. 
-#Since the name is long it is renamed as No.of.Inquiries.in.last.12.months
-names(credit_card_applications)[names(credit_card_applications) == 'No.of.Inquiries.in.last.12.months..excluding.home...auto.loans.'] <- 'No.of.Inquiries.in.last.12.months'
-plot_grid(ggplot(credit_card_applications, aes(No.of.Inquiries.in.last.12.months ,fill = Performance.Tag))+ geom_histogram(binwidth = 1, colour='blue'),
-          ggplot(credit_card_applications, aes(x="",y=No.of.Inquiries.in.last.12.months))+ geom_boxplot(width=0.1)+coord_flip()+box_theme, 
-          align = "v",ncol = 1)
-
-#Outstanding.Balance 
-credit_card_applications$Outstanding.Balance.in.lakh <- credit_card_applications$Outstanding.Balance/100000
-plot_grid(ggplot(credit_card_applications, aes(Outstanding.Balance.in.lakh ,fill = Performance.Tag))+ geom_histogram(binwidth = 5, colour='blue'),
-          ggplot(credit_card_applications, aes(x="",y=Outstanding.Balance.in.lakh))+ geom_boxplot(width=0.1)+coord_flip()+box_theme, 
-          align = "v",ncol = 1)
-
-
-#Total.No.of.Trades
-plot_grid(ggplot(credit_card_applications, aes(Total.No.of.Trades ,fill = Performance.Tag))+ geom_histogram(binwidth = 5, colour='blue'),
-          ggplot(credit_card_applications, aes(x="",y=Total.No.of.Trades))+ geom_boxplot(width=0.1)+coord_flip()+box_theme, 
-          align = "v",ncol = 1)
-
-
 # Boxplots of numeric variables relative to performance tag
-plot_grid(ggplot(credit_card_applications, aes(x=Performance.Tag,y=Outstanding.Balance.in.lakh, fill=Performance.Tag))+ geom_boxplot(width=0.2)+ 
+plot_grid(ggplot(credit_card_eda, aes(x=Performance.Tag,y=Outstanding.Balance.in.lakh, fill=Performance.Tag))+ geom_boxplot(width=0.2)+ 
             coord_flip() +theme(legend.position="none"),
-          ggplot(credit_card_applications, aes(x=Performance.Tag,y=Total.No.of.Trades, fill=Performance.Tag))+ geom_boxplot(width=0.2)+
+          ggplot(credit_card_eda, aes(x=Performance.Tag,y=Total.No.of.Trades, fill=Performance.Tag))+ geom_boxplot(width=0.2)+
             coord_flip() + box_theme_y,
-          ggplot(credit_card_applications, aes(x=Performance.Tag,y=No.of.Inquiries.in.last.12.months, fill=Performance.Tag))+ geom_boxplot(width=0.2)+
+          ggplot(credit_card_eda, aes(x=Performance.Tag,y=No.of.Inquiries.in.last.12.months, fill=Performance.Tag))+ geom_boxplot(width=0.2)+
             coord_flip() + box_theme_y,
-          ggplot(credit_card_applications, aes(x=Performance.Tag,y=No.of.Inquiries.in.last.6.months, fill=Performance.Tag))+ geom_boxplot(width=0.2)+
+          ggplot(credit_card_eda, aes(x=Performance.Tag,y=No.of.Inquiries.in.last.6.months, fill=Performance.Tag))+ geom_boxplot(width=0.2)+
             coord_flip() + box_theme_y,
-          ggplot(credit_card_applications, aes(x=Performance.Tag,y=No.of.PL.trades.opened.in.last.12.months, fill=Performance.Tag))+ geom_boxplot(width=0.2)+
+          ggplot(credit_card_eda, aes(x=Performance.Tag,y=No.of.PL.trades.opened.in.last.12.months, fill=Performance.Tag))+ geom_boxplot(width=0.2)+
             coord_flip() + box_theme_y,
-          ggplot(credit_card_applications, aes(x=Performance.Tag,y=No.of.PL.trades.opened.in.last.6.months, fill=Performance.Tag))+ geom_boxplot(width=0.2)+
+          ggplot(credit_card_eda, aes(x=Performance.Tag,y=No.of.PL.trades.opened.in.last.6.months, fill=Performance.Tag))+ geom_boxplot(width=0.2)+
             coord_flip() + box_theme_y,
-          ggplot(credit_card_applications, aes(x=Performance.Tag,y=No.of.trades.opened.in.last.12.months, fill=Performance.Tag))+ geom_boxplot(width=0.2)+
+          ggplot(credit_card_eda, aes(x=Performance.Tag,y=No.of.trades.opened.in.last.12.months, fill=Performance.Tag))+ geom_boxplot(width=0.2)+
             coord_flip() + box_theme_y,
-          ggplot(credit_card_applications, aes(x=Performance.Tag,y=No.of.trades.opened.in.last.6.months, fill=Performance.Tag))+ geom_boxplot(width=0.2)+
+          ggplot(credit_card_eda, aes(x=Performance.Tag,y=No.of.trades.opened.in.last.6.months, fill=Performance.Tag))+ geom_boxplot(width=0.2)+
             coord_flip() + box_theme_y,
-          ggplot(credit_card_applications, aes(x=Performance.Tag,y=Avgas.CC.Utilization.in.last.12.months, fill=Performance.Tag))+ geom_boxplot(width=0.2)+
+          ggplot(credit_card_eda, aes(x=Performance.Tag,y=Avgas.CC.Utilization.in.last.12.months, fill=Performance.Tag))+ geom_boxplot(width=0.2)+
             coord_flip() + box_theme_y,
           align = "v",nrow = 4)
-
-plot_grid(ggplot(credit_card_applications, aes(x=Performance.Tag,y=No.of.months.in.current.residence, fill=Performance.Tag))+ geom_boxplot(width=0.2)+ 
-            coord_flip() +theme(legend.position="none"),
-          ggplot(credit_card_applications, aes(x=Performance.Tag,y=No.of.months.in.current.company , fill=Performance.Tag))+ geom_boxplot(width=0.2)+
-            coord_flip() + box_theme_y,
-          align = "v",nrow = 4)
-
-# Variales 'No.of.months.in.current.residence'  seems to be significant and sees large number of default in the range of 20 to 25, also it has no outliers
-# Variales 'No.of.months.in.current.company'  seems to be significant and sees large number of default in the range of 30 to 40, also it has no outliers  
-
 
 #by looking into the box plot and histogram
 # Variable 'Outstanding.Balance.in.lakh'  sees large number of default in the range of 5 to 10 lakh and it has large number of outliers as well
@@ -724,66 +680,6 @@ plot_grid(ggplot(credit_card_applications, aes(x=Performance.Tag,y=No.of.months.
 
 #For  values that lie outside the 1.5 * IQR limits, we could cap it by replacing those observations outside the lower limit with the value of 5th %ile 
 #and those that lie above the upper limit, with the value of 95th %ile. Below is a sample code that achieves this.
-
-x_Outstanding.Balance.in.lakh <- credit_card_applications$Outstanding.Balance.in.lakh
-qnt <- quantile(x_Outstanding.Balance.in.lakh, probs=c(.25, .75), na.rm = T)
-caps <- quantile(x_Outstanding.Balance.in.lakh, probs=c(.05, .95), na.rm = T)
-H <- 1.5 * IQR(x_Outstanding.Balance.in.lakh, na.rm = T)
-x_Outstanding.Balance.in.lakh[x_Outstanding.Balance.in.lakh < (qnt[1] - H)] <- caps[1]
-x_Outstanding.Balance.in.lakh[x_Outstanding.Balance.in.lakh > (qnt[2] + H)] <- caps[2]
-credit_card_applications$Outstanding.Balance.in.lakh <- x_Outstanding.Balance.in.lakh
-
-#outlier treatment for Total.No.of.Trades using capping
-
-x_Total.No.of.Trades <- credit_card_applications$Total.No.of.Trades
-qnt <- quantile(x_Total.No.of.Trades, probs=c(.25, .75), na.rm = T)
-caps <- quantile(x_Total.No.of.Trades, probs=c(.05, .95), na.rm = T)
-H <- 1.5 * IQR(x_Total.No.of.Trades, na.rm = T)
-x_Total.No.of.Trades[x_Total.No.of.Trades < (qnt[1] - H)] <- caps[1]
-x_Total.No.of.Trades[x_Total.No.of.Trades > (qnt[2] + H)] <- caps[2]
-credit_card_applications$Total.No.of.Trades <- x_Total.No.of.Trades
-
-
-plot_grid(ggplot(credit_card_applications, aes(x=Performance.Tag,y=No.of.months.in.current.residence, fill=Performance.Tag))+ geom_boxplot(width=0.2)+ 
-            coord_flip() +theme(legend.position="none"),
-          ggplot(credit_card_applications, aes(x=Performance.Tag,y=No.of.months.in.current.company , fill=Performance.Tag))+ geom_boxplot(width=0.2)+
-            coord_flip() + box_theme_y,
-          ggplot(credit_card_applications, aes(x=Performance.Tag,y=No.of.times.90.DPD.or.worse.in.last.6.months, fill=Performance.Tag))+ geom_boxplot(width=0.2)+
-            coord_flip() + box_theme_y,
-          ggplot(credit_card_applications, aes(x=Performance.Tag,y=No.of.times.90.DPD.or.worse.in.last.12.months, fill=Performance.Tag))+ geom_boxplot(width=0.2)+
-            coord_flip() + box_theme_y,
-          ggplot(credit_card_applications, aes(x=Performance.Tag,y=No.of.times.60.DPD.or.worse.in.last.6.months, fill=Performance.Tag))+ geom_boxplot(width=0.2)+
-            coord_flip() + box_theme_y,
-          ggplot(credit_card_applications, aes(x=Performance.Tag,y=No.of.times.60.DPD.or.worse.in.last.12.months, fill=Performance.Tag))+ geom_boxplot(width=0.2)+
-            coord_flip() + box_theme_y,
-          ggplot(credit_card_applications, aes(x=Performance.Tag,y=No.of.times.30.DPD.or.worse.in.last.6.months, fill=Performance.Tag))+ geom_boxplot(width=0.2)+
-            coord_flip() + box_theme_y,
-          ggplot(credit_card_applications, aes(x=Performance.Tag,y=No.of.times.30.DPD.or.worse.in.last.12.months, fill=Performance.Tag))+ geom_boxplot(width=0.2)+
-            coord_flip() + box_theme_y,
-          align = "v",nrow = 4)
-
-# Variales 'No.of.months.in.current.residence'  seems to be significant and sees large number of default in the range of 20 to 25, also it has no outliers
-# Variales 'No.of.months.in.current.company'  seems to be significant and sees large number of default in the range of 30 to 40, also it has no outliers  
-
-#categorical variables 
-
-str(credit_card_applications)
-categorical_variables <- c("Gender","Marital.Status..at.the.time.of.application.","No.of.dependents",
-                           "Education","Profession","Type.of.residence","Presence.of.open.home.loan","Presence.of.open.auto.loan","Performance.Tag",
-                           "No.of.times.90.DPD.or.worse.in.last.6.months","No.of.times.90.DPD.or.worse.in.last.12.months",
-                           "No.of.times.60.DPD.or.worse.in.last.6.months","No.of.times.60.DPD.or.worse.in.last.12.months",
-                           "No.of.times.30.DPD.or.worse.in.last.6.months","No.of.times.30.DPD.or.worse.in.last.12.months")
-
-#continuous variables
-continuous_variables <- c("Income","No.of.months.in.current.residence","No.of.months.in.current.company","Performance.Tag",
-                          "Avgas.CC.Utilization.in.last.12.months","No.of.trades.opened.in.last.6.months","No.of.trades.opened.in.last.12.months","No.of.PL.trades.opened.in.last.6.months",     
-                          "No.of.PL.trades.opened.in.last.12.months","No.of.Inquiries.in.last.6.months","No.of.Inquiries.in.last.12.months","Outstanding.Balance.in.lakh", 
-                          "Total.No.of.Trades") 
-
-credit_card_applications_categorical_var <- credit_card_applications[,categorical_variables]
-credit_card_applications_numerical_var <- credit_card_applications[,continuous_variables]
-
-
 
 
 #role rate matrix
@@ -831,31 +727,24 @@ colnames(mat_role_rate_dpd_dpd_12_months) <- c("current","0-29","30-59","60-89",
 rownames(mat_role_rate_dpd_dpd_12_months) <- c("current","0-29","30-59","60-89","90-119","120-149","150-179","180+","Charged Off","Paid")
 write.csv(mat_role_rate_dpd_dpd_12_months, "mat_role_rate_dpd_dpd_12_months.csv")
 
-# Correlation between categorical variables
-#-----------------------------------------
-#rename the long column names to short column names to better visualize the corelation matrixs
-
-new_column_names_categorical <- c("perf.tag","Gender","Marital.Status","No.of.dependents",
-                                  "Education","Profession","Type.of.residence","home.loan","auto.loan",
-                                  "90.DPD.6.mon","90.DPD.12.mon",
-                                  "60.DPD.6.mon","60.DPD.12.mon",
-                                  "30.DPD.6.mon","30.DPD.12.mon"     
-                      ) 
-
-#TODO - to find the corelation between the DPD significant variables
 
 # Correlation between numeric variables
 #-----------------------------------------
 #rename the long column names to short column names to better visualize the corelation matrixs
-
-
+continuous_variables <- c("Income","No.of.months.in.current.residence","No.of.months.in.current.company","Performance.Tag",
+                          "Avgas.CC.Utilization.in.last.12.months","No.of.trades.opened.in.last.6.months","No.of.trades.opened.in.last.12.months","No.of.PL.trades.opened.in.last.6.months",     
+                          "No.of.PL.trades.opened.in.last.12.months",
+                          "No.of.Inquiries.in.last.6.months..excluding.home...auto.loans.",
+                          "No.of.Inquiries.in.last.12.months..excluding.home...auto.loans.","Outstanding.Balance.in.lakh", 
+                          "Total.No.of.Trades") 
+credit_card_applications_numerical_var <- credit_card_eda[,continuous_variables]
 
 new_column_names_continuous <- c("Income","mon.curr.res","mon.curr.com","perf.tag",
                                  "CC.Util.12.mon","trades.6.mon","trades.12.mon","PL.trades.6.mon",     
                       "PL.trades.12.mon","Inq.6.mon","Inq.12.mons","Out.Bal", 
                       "Trades") 
 x <- credit_card_applications_numerical_var
-for(i in 1:length(continuous_variables)) names(x)[names(x) == continuous_variables[i]] = new_column_names[i]
+for(i in 1:length(continuous_variables)) names(x)[names(x) == continuous_variables[i]] = new_column_names_continuous[i]
 
 #ggpairs(x[, 1:5])
 
@@ -868,22 +757,14 @@ cor(x[, c("Out.Bal","Trades","trades.6.mon","trades.12.mon","PL.trades.6.mon",
 # No.of.trades.opened.in.last.6.months,No.of.PL.trades.opened.in.last.6.months
 # seems to be highly corelated with other independent variables, we can ignore them 
 
-cor(x[, c("Income","Outstanding.Balance.in.lakh","Inq.6.mon","Inq.12.mons","mon.curr.res", "mon.curr.com", "PL.trades.12.mon",
+cor(x[, c("Income","Out.Bal","Inq.6.mon","Inq.12.mons","mon.curr.res", "mon.curr.com", "PL.trades.12.mon",
           "PL.trades.6.mon")], use = "complete.obs")
-
 
 #From the EDA, following seems to be the significant variables
 # Income, No.of.months.in.current.residence, No.of.months.in.current.company, No.of.Inquiries.in.last.6.months, No.of.Inquiries.in.last.2.months
 # No.of.PL.trades.opened.in.last.6.months, No.of.PL.trades.opened.in.last.12.months
 # But remember, among these significant variables, one or two variables are highly correlated to each other which can be further
 # anyalysed and removed as part of stepAIC
-
-
-#Using WOE to the continuous variables
-colnames(credit_card_applications_numerical_var)
-str(credit_card_applications)
-IV <- create_infotables(data=credit_card_applications_numerical_var, y="Performance.Tag.x", bins=10, parallel=TRUE)
-IV$Summary
 
 #------------------------------------------------------------------------------
 # 3. Data Prepration
@@ -958,11 +839,7 @@ chisq.test(cc_applications_income)
 
 
 # 10. Age  - Null hypothesis is Education is insignificant in deciding customer will default
-summary(credit_card_eda$Age)
-##credit_card_eda$AgeRange <- cut(credit_card_eda$Age, 
-                                                    #    breaks = c(-Inf, 11, 21, 31, 41, 51, 61, Inf), 
-                                                       # labels = c("0-10 Years", "11-20 Years", "21-30 Years", "31-40 Years", "41-50 Years", "51-60 Years", ">60 Years"), 
-                                                       # right = FALSE)
+
 cc_applications_age <- table(credit_card_eda$Performance.Tag, credit_card_eda$AgeCategory)
 chisq.test(cc_applications_age)
 #X-squared = 2.6088, df = 2, p-value = 0.2713
@@ -1138,132 +1015,11 @@ chisq.test(cc_Total.No.of.Trades )
 # 25.     Presence.of.open.auto.loan                                  0.04276                           Yes
 # 26.     Outstanding.Balance                                         2.086e-08                         Yes
 # 27.     Total.No.of.Trades                                          2.2e-16                           Yes 
- 
 
-#Feature selection
-#------------------
-#Chi square test to do the feature selection for categorical variables
-str(credit_card_applications_categorical_var)
-credit_card_applications_categorical_var
-mutate_each_(funs(factor(.)),categorical_variables)
-str(credit_card_applications_categorical_var)
-#Gender - check if it is significant based on p value from chi square test
-table(credit_card_applications_categorical_var$Gender, credit_card_applications_categorical_var$Performance.Tag.x)
-chisq.test(credit_card_applications_categorical_var$Gender, credit_card_applications_categorical_var$Performance.Tag.x, correct=FALSE)
-#since p-value = 0.6113 > 0.05, we accept the null hypothesis that the variable Gender is insignificant 
-
-#Marital.Status..at.the.time.of.application. - check if it is significant based on p value from chi square test
-table(credit_card_applications_categorical_var$Marital.Status..at.the.time.of.application., credit_card_applications_categorical_var$Performance.Tag.x)
-chisq.test(credit_card_applications_categorical_var$Marital.Status..at.the.time.of.application., credit_card_applications_categorical_var$Performance.Tag.x, correct=FALSE)
-#since p-value = 0.7715 > 0.05, we accept the null hypothesis that the variable Marital.Status is insignificant
-
-#No.of.dependents - check if it is significant based on p value from chi square test
-table(credit_card_applications_categorical_var$No.of.dependents, credit_card_applications_categorical_var$Performance.Tag.x)
-chisq.test(credit_card_applications_categorical_var$No.of.dependents, credit_card_applications_categorical_var$Performance.Tag.x, correct=FALSE)
-#since p-value = 0.1826 > 0.05, we accept the null hypothesis that the variable No.of.dependents is insignificant 
-
-#Education - check if it is significant based on p value from chi square test
-table(credit_card_applications_categorical_var$Education, credit_card_applications_categorical_var$Performance.Tag.x)
-chisq.test(credit_card_applications_categorical_var$Education, credit_card_applications_categorical_var$Performance.Tag.x, correct=FALSE)
-#since p-value = 0.8104 > 0.05, we accept the null hypothesis that the variable Education is insignificant 
-
-#Profession - check if it is significant based on p value from chi square test
-table(credit_card_applications_categorical_var$Profession, credit_card_applications_categorical_var$Performance.Tag.x)
-chisq.test(credit_card_applications_categorical_var$Profession, credit_card_applications_categorical_var$Performance.Tag.x, correct=FALSE)
-#since p-value = 0.06038 > 0.05, we accept the null hypothesis that the variable Profession is insignificant 
-
-#Type.of.residence - check if it is significant based on p value from chi square test
-table(credit_card_applications_categorical_var$Type.of.residence, credit_card_applications_categorical_var$Performance.Tag.x)
-chisq.test(credit_card_applications_categorical_var$Type.of.residence, credit_card_applications_categorical_var$Performance.Tag.x, correct=FALSE)
-#since p-value = p-value = 0.7655 > 0.05 , we accept the null hypothesis that the variable Type.of.residence is insignificant 
-
-#Presence.of.open.home.loan - check if it is significant based on p value from chi square test
-table(credit_card_applications_categorical_var$Presence.of.open.home.loan, credit_card_applications_categorical_var$Performance.Tag.x)
-chisq.test(credit_card_applications_categorical_var$Presence.of.open.home.loan, credit_card_applications_categorical_var$Performance.Tag.x, correct=FALSE)
-#since p-value = 1.716e-11 < 0.05, we reject the null hypothesis and conclude that variable  'Presence.of.open.home.loan' is significant 
-
-#Presence.of.open.auto.loan - check if it is significant based on p value from chi square test
-table(credit_card_applications_categorical_var$Presence.of.open.auto.loan, credit_card_applications_categorical_var$Performance.Tag.x)
-chisq.test(credit_card_applications_categorical_var$Presence.of.open.auto.loan, credit_card_applications_categorical_var$Performance.Tag.x, correct=FALSE)
-#since p-value = 0.03454 < 0.05, we reject the null hypothesis and conclude that variable  'Presence.of.open.auto.loan' is significant 
-
-#No.of.times.90.DPD.or.worse.in.last.6.months - check if it is significant based on p value from chi square test
-table(credit_card_applications_categorical_var$No.of.times.90.DPD.or.worse.in.last.6.months, credit_card_applications_categorical_var$Performance.Tag.x)
-chisq.test(credit_card_applications_categorical_var$No.of.times.90.DPD.or.worse.in.last.6.months, credit_card_applications_categorical_var$Performance.Tag.x, correct=FALSE)
-#since p-value = p-value < 2.2e-16, we reject the null hypothesis and conclude that variable  'No.of.times.90.DPD.or.worse.in.last.6.months' is significant 
-
-
-#No.of.times.90.DPD.or.worse.in.last.12.months - check if it is significant based on p value from chi square test
-table(credit_card_applications_categorical_var$No.of.times.90.DPD.or.worse.in.last.12.months, credit_card_applications_categorical_var$Performance.Tag.x)
-chisq.test(credit_card_applications_categorical_var$No.of.times.90.DPD.or.worse.in.last.12.months, credit_card_applications_categorical_var$Performance.Tag.x, correct=FALSE)
-#since p-value = p-value < 2.2e-16, we reject the null hypothesis and conclude that variable  'No.of.times.90.DPD.or.worse.in.last.12.months' is significant 
-
-#No.of.times.60.DPD.or.worse.in.last.6.months - check if it is significant based on p value from chi square test
-table(credit_card_applications_categorical_var$No.of.times.60.DPD.or.worse.in.last.6.months, credit_card_applications_categorical_var$Performance.Tag.x)
-chisq.test(credit_card_applications_categorical_var$No.of.times.60.DPD.or.worse.in.last.6.months, credit_card_applications_categorical_var$Performance.Tag.x, correct=FALSE)
-#since p-value = p-value < 2.2e-16, we reject the null hypothesis and conclude that variable  'No.of.times.60.DPD.or.worse.in.last.6.months' is significant 
-
-
-#No.of.times.60.DPD.or.worse.in.last.12.months - check if it is significant based on p value from chi square test
-table(credit_card_applications_categorical_var$No.of.times.60.DPD.or.worse.in.last.12.months, credit_card_applications_categorical_var$Performance.Tag.x)
-chisq.test(credit_card_applications_categorical_var$No.of.times.60.DPD.or.worse.in.last.12.months, credit_card_applications_categorical_var$Performance.Tag.x, correct=FALSE)
-#since p-value = p-value < 2.2e-16, we reject the null hypothesis and conclude that variable  'No.of.times.60.DPD.or.worse.in.last.12.months' is significant 
-
-
-#No.of.times.30.DPD.or.worse.in.last.6.months - check if it is significant based on p value from chi square test
-table(credit_card_applications_categorical_var$No.of.times.30.DPD.or.worse.in.last.6.months, credit_card_applications_categorical_var$Performance.Tag.x)
-chisq.test(credit_card_applications_categorical_var$No.of.times.30.DPD.or.worse.in.last.6.months, credit_card_applications_categorical_var$Performance.Tag.x, correct=FALSE)
-#since p-value = p-value < 2.2e-16, we reject the null hypothesis and conclude that variable  'No.of.times.30.DPD.or.worse.in.last.6.months' is significant 
-
-
-#No.of.times.30.DPD.or.worse.in.last.12.months - check if it is significant based on p value from chi square test
-table(credit_card_applications_categorical_var$No.of.times.30.DPD.or.worse.in.last.12.months, credit_card_applications_categorical_var$Performance.Tag.x)
-chisq.test(credit_card_applications_categorical_var$No.of.times.30.DPD.or.worse.in.last.12.months, credit_card_applications_categorical_var$Performance.Tag.x, correct=FALSE)
-#since p-value = p-value < 2.2e-16, we reject the null hypothesis and conclude that variable  'No.of.times.30.DPD.or.worse.in.last.12.months' is significant 
-
-#ALL the DPD  variables are significant for chi square test, now we have to multicollinaearity among them so that we can reduce the variable 
-# which is function of others
-
-#WOE to do the feature selection for continuous variables
-#--------------------------------------------------------
-colnames(credit_card_applications_numerical_var)
-str(credit_card_applications_numerical_var)
-credit_card_applications_numerical_var$Performance.Tag <- as.integer(credit_card_applications_numerical_var$Performance.Tag)
-class(credit_card_eda$Performance.Tag)
-IV <- create_infotables(data=credit_card_applications_numerical_var, y="Performance.Tag", bins=10, parallel=TRUE)
-IV$Summary
-
-knitr::kable(head(IV$Summary))
-
-knitr::kable(IV$Tables$Avgas.CC.Utilization.in.last.12.months)
-knitr::kable(IV$Tables$No.of.trades.opened.in.last.12.months)
-knitr::kable(IV$Tables$No.of.PL.trades.opened.in.last.12.months)
-knitr::kable(IV$Tables$No.of.Inquiries.in.last.12.months)
 
 #--------------------------------------------------------------------
 # Prepare data for modeling
 #--------------------------------------------------------------------
-
-# As we have many numeric variables and ranges varies for each so for batter impact 
-#  identification scaling all numerical variables.
-No.of.trades.opened.in.last.6.months <- scale(credit_card_eda$No.of.trades.opened.in.last.6.months)
-No.of.PL.trades.opened.in.last.6.months <- scale(credit_card_eda$No.of.PL.trades.opened.in.last.6.months)
-No.of.Inquiries.in.last.6.months <- scale(credit_card_eda$No.of.Inquiries.in.last.6.months)
-Total.No.of.Trades <- scale(credit_card_eda$Total.No.of.Trades)
-Income <- scale(credit_card_eda$Income)
-No.of.months.in.current.residence <- scale(credit_card_eda$No.of.months.in.current.residence)
-No.of.months.in.current.company <- scale(credit_card_eda$No.of.months.in.current.company)
-Avgas.CC.Utilization.in.last.12.months <- scale(credit_card_eda$Avgas.CC.Utilization.in.last.12.months)       
-No.of.trades.opened.in.last.12.months <- scale(credit_card_eda$No.of.trades.opened.in.last.12.months)
-No.of.PL.trades.opened.in.last.12.months <- scale(credit_card_eda$No.of.PL.trades.opened.in.last.12.months)
-No.of.Inquiries.in.last.12.months <- scale(credit_card_eda$No.of.Inquiries.in.last.12.months)
-Outstanding.Balance <- scale(credit_card_eda$Outstanding.Balance)
-No.of.times.30.DPD.or.worse.in.last.6.months <- scale(credit_card_eda$No.of.times.30.DPD.or.worse.in.last.6.months)
-No.of.times.90.DPD.or.worse.in.last.6.months <- scale(credit_card_eda$No.of.times.90.DPD.or.worse.in.last.6.months)
-No.of.times.60.DPD.or.worse.in.last.6.months <- scale(credit_card_eda$No.of.times.60.DPD.or.worse.in.last.6.months) 
-No.of.times.30.DPD.or.worse.in.last.12.months <- scale(credit_card_eda$No.of.times.30.DPD.or.worse.in.last.12.months)
-No.of.times.90.DPD.or.worse.in.last.12.months <- scale(credit_card_eda$No.of.times.90.DPD.or.worse.in.last.12.months)
-No.of.times.60.DPD.or.worse.in.last.12.months <- scale(credit_card_eda$No.of.times.60.DPD.or.worse.in.last.12.months)
 
 credit_card_num_vars <- data.frame(No.of.trades.opened.in.last.6.months, No.of.PL.trades.opened.in.last.6.months,
                                   No.of.Inquiries.in.last.6.months,No.of.Inquiries.in.last.6.months,
@@ -1296,12 +1052,12 @@ credit_card_final$Performance.Tag <- credit_card_eda$Performance.Tag
 #IV calculation, WOE analysis and imputation if required
 colnames(credit_card_eda)
 
-data1_credit_card_eda <- credit_card_eda[, -which(names(credit_card_eda) %in% c("IncomeRange", "Residence.Years", "Company.Years", "x_Avgas.CC.Utilization.in.last.12.months" ))]
+credit_card_woe_data <- credit_card_eda[, -which(names(credit_card_eda) %in% c("IncomeRange", "Residence.Years", "Company.Years", "x_Avgas.CC.Utilization.in.last.12.months" ))]
 
-data1_credit_card_eda$Performance.Tag <- as.numeric(levels(data1_credit_card_eda$Performance.Tag))[data1_credit_card_eda$Performance.Tag]
-colnames(data1_credit_card_eda)
+credit_card_woe_data$Performance.Tag <- as.numeric(levels(credit_card_woe_data$Performance.Tag))[credit_card_woe_data$Performance.Tag]
+colnames(credit_card_woe_data)
 
-IV <- create_infotables(data=data1_credit_card_eda, y="Performance.Tag", bins=10, parallel=TRUE)
+IV <- create_infotables(data=credit_card_woe_data, y="Performance.Tag", bins=10, parallel=TRUE)
 
 IV$Summary
 
@@ -1323,21 +1079,21 @@ print(IV$Tables$Avgas.CC.Utilization.in.last.12.months, row.names=FALSE)
 # [72,113]                                  7020 0.10126509  0.38040064 0.31119019
 
 
-data1_credit_card_eda[(data1_credit_card_eda$Avgas.CC.Utilization.in.last.12.months <= 8),]$Avgas.CC.Utilization.in.last.12.months <- -0.79760307  
-data1_credit_card_eda[(data1_credit_card_eda$Avgas.CC.Utilization.in.last.12.months >= 9)
-                      & (data1_credit_card_eda$Avgas.CC.Utilization.in.last.12.months <= 11),]$Avgas.CC.Utilization.in.last.12.months <- -0.67128981                    
-data1_credit_card_eda[(data1_credit_card_eda$Avgas.CC.Utilization.in.last.12.months >= 12)
-                      & (data1_credit_card_eda$Avgas.CC.Utilization.in.last.12.months <= 14),]$Avgas.CC.Utilization.in.last.12.months <- -0.46771427                     
-data1_credit_card_eda[(data1_credit_card_eda$Avgas.CC.Utilization.in.last.12.months >= 15)
-                      & (data1_credit_card_eda$Avgas.CC.Utilization.in.last.12.months <= 22),]$Avgas.CC.Utilization.in.last.12.months <- -0.06395137                     
-data1_credit_card_eda[(data1_credit_card_eda$Avgas.CC.Utilization.in.last.12.months >= 23)
-                      & (data1_credit_card_eda$Avgas.CC.Utilization.in.last.12.months <= 36),]$Avgas.CC.Utilization.in.last.12.months <- 0.46472310                     
-data1_credit_card_eda[(data1_credit_card_eda$Avgas.CC.Utilization.in.last.12.months >= 23)
-                      & (data1_credit_card_eda$Avgas.CC.Utilization.in.last.12.months <= 36),]$Avgas.CC.Utilization.in.last.12.months <- 0.46472310                     
-data1_credit_card_eda[(data1_credit_card_eda$Avgas.CC.Utilization.in.last.12.months >= 37)
-                      & (data1_credit_card_eda$Avgas.CC.Utilization.in.last.12.months <= 71),]$Avgas.CC.Utilization.in.last.12.months <- 0.58331176                     
-data1_credit_card_eda[(data1_credit_card_eda$Avgas.CC.Utilization.in.last.12.months >= 72)
-                      & (data1_credit_card_eda$Avgas.CC.Utilization.in.last.12.months <= 113),]$Avgas.CC.Utilization.in.last.12.months <- 0.38040064                     
+credit_card_woe_data[(credit_card_woe_data$Avgas.CC.Utilization.in.last.12.months <= 8),]$Avgas.CC.Utilization.in.last.12.months <- -0.79760307  
+credit_card_woe_data[(credit_card_woe_data$Avgas.CC.Utilization.in.last.12.months >= 9)
+                      & (credit_card_woe_data$Avgas.CC.Utilization.in.last.12.months <= 11),]$Avgas.CC.Utilization.in.last.12.months <- -0.67128981                    
+credit_card_woe_data[(credit_card_woe_data$Avgas.CC.Utilization.in.last.12.months >= 12)
+                      & (credit_card_woe_data$Avgas.CC.Utilization.in.last.12.months <= 14),]$Avgas.CC.Utilization.in.last.12.months <- -0.46771427                     
+credit_card_woe_data[(credit_card_woe_data$Avgas.CC.Utilization.in.last.12.months >= 15)
+                      & (credit_card_woe_data$Avgas.CC.Utilization.in.last.12.months <= 22),]$Avgas.CC.Utilization.in.last.12.months <- -0.06395137                     
+credit_card_woe_data[(credit_card_woe_data$Avgas.CC.Utilization.in.last.12.months >= 23)
+                      & (credit_card_woe_data$Avgas.CC.Utilization.in.last.12.months <= 36),]$Avgas.CC.Utilization.in.last.12.months <- 0.46472310                     
+credit_card_woe_data[(credit_card_woe_data$Avgas.CC.Utilization.in.last.12.months >= 23)
+                      & (credit_card_woe_data$Avgas.CC.Utilization.in.last.12.months <= 36),]$Avgas.CC.Utilization.in.last.12.months <- 0.46472310                     
+credit_card_woe_data[(credit_card_woe_data$Avgas.CC.Utilization.in.last.12.months >= 37)
+                      & (credit_card_woe_data$Avgas.CC.Utilization.in.last.12.months <= 71),]$Avgas.CC.Utilization.in.last.12.months <- 0.58331176                     
+credit_card_woe_data[(credit_card_woe_data$Avgas.CC.Utilization.in.last.12.months >= 72)
+                      & (credit_card_woe_data$Avgas.CC.Utilization.in.last.12.months <= 113),]$Avgas.CC.Utilization.in.last.12.months <- 0.38040064                     
 
 #2. No.of.trades.opened.in.last.12.months variable WOE analysis and mutation if required
 print(IV$Tables$No.of.trades.opened.in.last.12.months, row.names=FALSE)
@@ -1352,20 +1108,20 @@ print(IV$Tables$No.of.trades.opened.in.last.12.months, row.names=FALSE)
 # [10,12]                                 6677  0.09631724  0.487698868 0.29833324
 # [13,28]                                 7952  0.11470940  0.002084386 0.29833374
 
-data1_credit_card_eda[(data1_credit_card_eda$No.of.trades.opened.in.last.12.months == 0),]$No.of.trades.opened.in.last.12.months <- -0.669594615                                             
-data1_credit_card_eda[(data1_credit_card_eda$No.of.trades.opened.in.last.12.months == 1),]$No.of.trades.opened.in.last.12.months <- -1.027487864
-data1_credit_card_eda[(data1_credit_card_eda$No.of.trades.opened.in.last.12.months == 2),]$No.of.trades.opened.in.last.12.months <- -0.812609632
-data1_credit_card_eda[(data1_credit_card_eda$No.of.trades.opened.in.last.12.months == 3),]$No.of.trades.opened.in.last.12.months <- 0.004791377                                             
-data1_credit_card_eda[(data1_credit_card_eda$No.of.trades.opened.in.last.12.months >= 4)
-                      & (data1_credit_card_eda$No.of.trades.opened.in.last.12.months <= 5),]$No.of.trades.opened.in.last.12.months <- 0.109255835                    
-data1_credit_card_eda[(data1_credit_card_eda$No.of.trades.opened.in.last.12.months >= 6)
-                      & (data1_credit_card_eda$No.of.trades.opened.in.last.12.months <= 7),]$No.of.trades.opened.in.last.12.months <- 0.487698868                    
-data1_credit_card_eda[(data1_credit_card_eda$No.of.trades.opened.in.last.12.months >= 8)
-                      & (data1_credit_card_eda$No.of.trades.opened.in.last.12.months <= 9),]$No.of.trades.opened.in.last.12.months <- 0.570461657                    
-data1_credit_card_eda[(data1_credit_card_eda$No.of.trades.opened.in.last.12.months >= 10)
-                      & (data1_credit_card_eda$No.of.trades.opened.in.last.12.months <= 12),]$No.of.trades.opened.in.last.12.months <- 0.487698868                    
-data1_credit_card_eda[(data1_credit_card_eda$No.of.trades.opened.in.last.12.months >= 13)
-                      & (data1_credit_card_eda$No.of.trades.opened.in.last.12.months <= 28),]$No.of.trades.opened.in.last.12.months <- 0.002084386                    
+credit_card_woe_data[(credit_card_woe_data$No.of.trades.opened.in.last.12.months == 0),]$No.of.trades.opened.in.last.12.months <- -0.669594615                                             
+credit_card_woe_data[(credit_card_woe_data$No.of.trades.opened.in.last.12.months == 1),]$No.of.trades.opened.in.last.12.months <- -1.027487864
+credit_card_woe_data[(credit_card_woe_data$No.of.trades.opened.in.last.12.months == 2),]$No.of.trades.opened.in.last.12.months <- -0.812609632
+credit_card_woe_data[(credit_card_woe_data$No.of.trades.opened.in.last.12.months == 3),]$No.of.trades.opened.in.last.12.months <- 0.004791377                                             
+credit_card_woe_data[(credit_card_woe_data$No.of.trades.opened.in.last.12.months >= 4)
+                      & (credit_card_woe_data$No.of.trades.opened.in.last.12.months <= 5),]$No.of.trades.opened.in.last.12.months <- 0.109255835                    
+credit_card_woe_data[(credit_card_woe_data$No.of.trades.opened.in.last.12.months >= 6)
+                      & (credit_card_woe_data$No.of.trades.opened.in.last.12.months <= 7),]$No.of.trades.opened.in.last.12.months <- 0.487698868                    
+credit_card_woe_data[(credit_card_woe_data$No.of.trades.opened.in.last.12.months >= 8)
+                      & (credit_card_woe_data$No.of.trades.opened.in.last.12.months <= 9),]$No.of.trades.opened.in.last.12.months <- 0.570461657                    
+credit_card_woe_data[(credit_card_woe_data$No.of.trades.opened.in.last.12.months >= 10)
+                      & (credit_card_woe_data$No.of.trades.opened.in.last.12.months <= 12),]$No.of.trades.opened.in.last.12.months <- 0.487698868                    
+credit_card_woe_data[(credit_card_woe_data$No.of.trades.opened.in.last.12.months >= 13)
+                      & (credit_card_woe_data$No.of.trades.opened.in.last.12.months <= 28),]$No.of.trades.opened.in.last.12.months <- 0.002084386                    
 
 #3. No.of.PL.trades.opened.in.last.12.months variable WOE analysis and mutation if required
 print(IV$Tables$No.of.PL.trades.opened.in.last.12.months, row.names=FALSE)
@@ -1377,14 +1133,14 @@ print(IV$Tables$No.of.PL.trades.opened.in.last.12.months, row.names=FALSE)
 # [4,4]                                       7877  0.1136275  0.4987698 0.2695346
 # [5,5]                                       6176  0.0890902  0.4200868 0.2886521
 # [6,12]                                      8329  0.1201477  0.2406022 0.2964260
-data1_credit_card_eda[(data1_credit_card_eda$No.of.PL.trades.opened.in.last.12.months == 0),]$No.of.PL.trades.opened.in.last.12.months <- -0.9021938                                             
-data1_credit_card_eda[(data1_credit_card_eda$No.of.PL.trades.opened.in.last.12.months == 1),]$No.of.PL.trades.opened.in.last.12.months <- -0.1311880                                             
-data1_credit_card_eda[(data1_credit_card_eda$No.of.PL.trades.opened.in.last.12.months == 2),]$No.of.PL.trades.opened.in.last.12.months <- 0.2509848                                             
-data1_credit_card_eda[(data1_credit_card_eda$No.of.PL.trades.opened.in.last.12.months == 3),]$No.of.PL.trades.opened.in.last.12.months <- 0.4200868                                             
-data1_credit_card_eda[(data1_credit_card_eda$No.of.PL.trades.opened.in.last.12.months == 4),]$No.of.PL.trades.opened.in.last.12.months <- 0.4987698                                             
-data1_credit_card_eda[(data1_credit_card_eda$No.of.PL.trades.opened.in.last.12.months == 5),]$No.of.PL.trades.opened.in.last.12.months <- 0.4200868                                             
-data1_credit_card_eda[(data1_credit_card_eda$No.of.PL.trades.opened.in.last.12.months >= 6)
-                      & (data1_credit_card_eda$No.of.PL.trades.opened.in.last.12.months <= 12),]$No.of.PL.trades.opened.in.last.12.month <- 0.2509848                   
+credit_card_woe_data[(credit_card_woe_data$No.of.PL.trades.opened.in.last.12.months == 0),]$No.of.PL.trades.opened.in.last.12.months <- -0.9021938                                             
+credit_card_woe_data[(credit_card_woe_data$No.of.PL.trades.opened.in.last.12.months == 1),]$No.of.PL.trades.opened.in.last.12.months <- -0.1311880                                             
+credit_card_woe_data[(credit_card_woe_data$No.of.PL.trades.opened.in.last.12.months == 2),]$No.of.PL.trades.opened.in.last.12.months <- 0.2509848                                             
+credit_card_woe_data[(credit_card_woe_data$No.of.PL.trades.opened.in.last.12.months == 3),]$No.of.PL.trades.opened.in.last.12.months <- 0.4200868                                             
+credit_card_woe_data[(credit_card_woe_data$No.of.PL.trades.opened.in.last.12.months == 4),]$No.of.PL.trades.opened.in.last.12.months <- 0.4987698                                             
+credit_card_woe_data[(credit_card_woe_data$No.of.PL.trades.opened.in.last.12.months == 5),]$No.of.PL.trades.opened.in.last.12.months <- 0.4200868                                             
+credit_card_woe_data[(credit_card_woe_data$No.of.PL.trades.opened.in.last.12.months >= 6)
+                      & (credit_card_woe_data$No.of.PL.trades.opened.in.last.12.months <= 12),]$No.of.PL.trades.opened.in.last.12.month <- 0.2509848                   
 
 #4. No.of.Inquiries.in.last.12.months..excluding.home...auto.loans. variable WOE analysis and mutation if required
 print(IV$Tables$No.of.Inquiries.in.last.12.months..excluding.home...auto.loans., row.names=FALSE)
@@ -1400,16 +1156,16 @@ print(IV$Tables$No.of.Inquiries.in.last.12.months..excluding.home...auto.loans.,
 # [9,20]                                                            7500 0.10818920  0.009143055 0.2956835
 
 
-data1_credit_card_eda[(data1_credit_card_eda$No.of.Inquiries.in.last.12.months..excluding.home...auto.loans. == 0),]$No.of.Inquiries.in.last.12.months..excluding.home...auto.loans. <- -1.070125700                                            
-data1_credit_card_eda[(data1_credit_card_eda$No.of.Inquiries.in.last.12.months..excluding.home...auto.loans. == 1),]$No.of.Inquiries.in.last.12.months..excluding.home...auto.loans. <- -0.036980894                                           
-data1_credit_card_eda[(data1_credit_card_eda$No.of.Inquiries.in.last.12.months..excluding.home...auto.loans. == 2),]$No.of.Inquiries.in.last.12.months..excluding.home...auto.loans. <- 0.138857418                                           
-data1_credit_card_eda[(data1_credit_card_eda$No.of.Inquiries.in.last.12.months..excluding.home...auto.loans. == 3),]$No.of.Inquiries.in.last.12.months..excluding.home...auto.loans. <- 0.164542324                                          
-data1_credit_card_eda[(data1_credit_card_eda$No.of.Inquiries.in.last.12.months..excluding.home...auto.loans. == 4),]$No.of.Inquiries.in.last.12.months..excluding.home...auto.loans. <- 0.247948865                                         
-data1_credit_card_eda[(data1_credit_card_eda$No.of.Inquiries.in.last.12.months..excluding.home...auto.loans. == 5),]$No.of.Inquiries.in.last.12.months..excluding.home...auto.loans. <- 0.583098241                                         
-data1_credit_card_eda[(data1_credit_card_eda$No.of.Inquiries.in.last.12.months..excluding.home...auto.loans. >= 6)
-                      & (data1_credit_card_eda$No.of.Inquiries.in.last.12.months..excluding.home...auto.loans. <= 8),]$No.of.Inquiries.in.last.12.months..excluding.home...auto.loans. <- 0.482618708                   
-data1_credit_card_eda[(data1_credit_card_eda$No.of.Inquiries.in.last.12.months..excluding.home...auto.loans. >= 9)
-                      & (data1_credit_card_eda$No.of.Inquiries.in.last.12.months..excluding.home...auto.loans. <= 20),]$No.of.Inquiries.in.last.12.months..excluding.home...auto.loans. <- 0.009143055                   
+credit_card_woe_data[(credit_card_woe_data$No.of.Inquiries.in.last.12.months..excluding.home...auto.loans. == 0),]$No.of.Inquiries.in.last.12.months..excluding.home...auto.loans. <- -1.070125700                                            
+credit_card_woe_data[(credit_card_woe_data$No.of.Inquiries.in.last.12.months..excluding.home...auto.loans. == 1),]$No.of.Inquiries.in.last.12.months..excluding.home...auto.loans. <- -0.036980894                                           
+credit_card_woe_data[(credit_card_woe_data$No.of.Inquiries.in.last.12.months..excluding.home...auto.loans. == 2),]$No.of.Inquiries.in.last.12.months..excluding.home...auto.loans. <- 0.138857418                                           
+credit_card_woe_data[(credit_card_woe_data$No.of.Inquiries.in.last.12.months..excluding.home...auto.loans. == 3),]$No.of.Inquiries.in.last.12.months..excluding.home...auto.loans. <- 0.164542324                                          
+credit_card_woe_data[(credit_card_woe_data$No.of.Inquiries.in.last.12.months..excluding.home...auto.loans. == 4),]$No.of.Inquiries.in.last.12.months..excluding.home...auto.loans. <- 0.247948865                                         
+credit_card_woe_data[(credit_card_woe_data$No.of.Inquiries.in.last.12.months..excluding.home...auto.loans. == 5),]$No.of.Inquiries.in.last.12.months..excluding.home...auto.loans. <- 0.583098241                                         
+credit_card_woe_data[(credit_card_woe_data$No.of.Inquiries.in.last.12.months..excluding.home...auto.loans. >= 6)
+                      & (credit_card_woe_data$No.of.Inquiries.in.last.12.months..excluding.home...auto.loans. <= 8),]$No.of.Inquiries.in.last.12.months..excluding.home...auto.loans. <- 0.482618708                   
+credit_card_woe_data[(credit_card_woe_data$No.of.Inquiries.in.last.12.months..excluding.home...auto.loans. >= 9)
+                      & (credit_card_woe_data$No.of.Inquiries.in.last.12.months..excluding.home...auto.loans. <= 20),]$No.of.Inquiries.in.last.12.months..excluding.home...auto.loans. <- 0.009143055                   
 
 #5. Outstanding.Balance variable WOE analysis and mutation if required
 print(IV$Tables$Outstanding.Balance, row.names=FALSE)
@@ -1425,26 +1181,26 @@ print(IV$Tables$Outstanding.Balance, row.names=FALSE)
 # [1356915,2960834]                                  6932 0.09999567      -0.3810991    0.18741359
 # [2960840,3283579]                                  6933 0.10001010      -0.8221463    0.23461969
 # [3283758,5218801]                                  6933 0.10001010       0.2971522    0.24475447
-data1_credit_card_eda[(data1_credit_card_eda$Outstanding.Balance >= 0)
-                      & (data1_credit_card_eda$Outstanding.Balance <= 6841),]$Outstanding.Balance <- -0.7765175                  
-data1_credit_card_eda[(data1_credit_card_eda$Outstanding.Balance >= 6843)
-                      & (data1_credit_card_eda$Outstanding.Balance <= 25636),]$Outstanding.Balance <- -0.9107738                 
-data1_credit_card_eda[(data1_credit_card_eda$Outstanding.Balance >= 25637)
-                      & (data1_credit_card_eda$Outstanding.Balance <= 387052),]$Outstanding.Balance <- -0.1412201                 
-data1_credit_card_eda[(data1_credit_card_eda$Outstanding.Balance >= 387063)
-                      & (data1_credit_card_eda$Outstanding.Balance <= 585483),]$Outstanding.Balance <- 0.2528617              
-data1_credit_card_eda[(data1_credit_card_eda$Outstanding.Balance >= 585496)
-                      & (data1_credit_card_eda$Outstanding.Balance <= 774228),]$Outstanding.Balance <- .4521857                
-data1_credit_card_eda[(data1_credit_card_eda$Outstanding.Balance >= 774241)
-                      & (data1_credit_card_eda$Outstanding.Balance <= 972229),]$Outstanding.Balance <- .4521857                
-data1_credit_card_eda[(data1_credit_card_eda$Outstanding.Balance >= 972243)
-                      & (data1_credit_card_eda$Outstanding.Balance <= 1356902),]$Outstanding.Balance <- 0.3988273               
-data1_credit_card_eda[(data1_credit_card_eda$Outstanding.Balance >= 1356915)
-                      & (data1_credit_card_eda$Outstanding.Balance <= 2960834),]$Outstanding.Balance <- -0.3810991              
-data1_credit_card_eda[(data1_credit_card_eda$Outstanding.Balance >= 2960840)
-                      & (data1_credit_card_eda$Outstanding.Balance <= 3283579),]$Outstanding.Balance <- -0.8221463             
-data1_credit_card_eda[(data1_credit_card_eda$Outstanding.Balance >= 3283758)
-                      & (data1_credit_card_eda$Outstanding.Balance <= 5218801),]$Outstanding.Balance <- 0.2971522             
+credit_card_woe_data[(credit_card_woe_data$Outstanding.Balance >= 0)
+                      & (credit_card_woe_data$Outstanding.Balance <= 6841),]$Outstanding.Balance <- -0.7765175                  
+credit_card_woe_data[(credit_card_woe_data$Outstanding.Balance >= 6843)
+                      & (credit_card_woe_data$Outstanding.Balance <= 25636),]$Outstanding.Balance <- -0.9107738                 
+credit_card_woe_data[(credit_card_woe_data$Outstanding.Balance >= 25637)
+                      & (credit_card_woe_data$Outstanding.Balance <= 387052),]$Outstanding.Balance <- -0.1412201                 
+credit_card_woe_data[(credit_card_woe_data$Outstanding.Balance >= 387063)
+                      & (credit_card_woe_data$Outstanding.Balance <= 585483),]$Outstanding.Balance <- 0.2528617              
+credit_card_woe_data[(credit_card_woe_data$Outstanding.Balance >= 585496)
+                      & (credit_card_woe_data$Outstanding.Balance <= 774228),]$Outstanding.Balance <- .4521857                
+credit_card_woe_data[(credit_card_woe_data$Outstanding.Balance >= 774241)
+                      & (credit_card_woe_data$Outstanding.Balance <= 972229),]$Outstanding.Balance <- .4521857                
+credit_card_woe_data[(credit_card_woe_data$Outstanding.Balance >= 972243)
+                      & (credit_card_woe_data$Outstanding.Balance <= 1356902),]$Outstanding.Balance <- 0.3988273               
+credit_card_woe_data[(credit_card_woe_data$Outstanding.Balance >= 1356915)
+                      & (credit_card_woe_data$Outstanding.Balance <= 2960834),]$Outstanding.Balance <- -0.3810991              
+credit_card_woe_data[(credit_card_woe_data$Outstanding.Balance >= 2960840)
+                      & (credit_card_woe_data$Outstanding.Balance <= 3283579),]$Outstanding.Balance <- -0.8221463             
+credit_card_woe_data[(credit_card_woe_data$Outstanding.Balance >= 3283758)
+                      & (credit_card_woe_data$Outstanding.Balance <= 5218801),]$Outstanding.Balance <- 0.2971522             
 
 #6. No.of.times.30.DPD.or.worse.in.last.6.months variable WOE analysis and mutation if required
 print(IV$Tables$No.of.times.30.DPD.or.worse.in.last.6.months , row.names=FALSE)
@@ -1454,10 +1210,10 @@ print(IV$Tables$No.of.times.30.DPD.or.worse.in.last.6.months , row.names=FALSE)
 # [1,1]                                          9470         0.1366069       0.4648701     0.12753711
 # [2,7]                                          10242        0.1477432       0.7403733     0.24218377
 
-data1_credit_card_eda[(data1_credit_card_eda$No.of.times.30.DPD.or.worse.in.last.6.months == 0),]$No.of.times.30.DPD.or.worse.in.last.6.months <- -0.3888079                                           
-data1_credit_card_eda[(data1_credit_card_eda$No.of.times.30.DPD.or.worse.in.last.6.months == 1),]$No.of.times.30.DPD.or.worse.in.last.6.months <- 0.4648701                                           
-data1_credit_card_eda[(data1_credit_card_eda$No.of.times.30.DPD.or.worse.in.last.6.months>= 2)
-                      & (data1_credit_card_eda$No.of.times.30.DPD.or.worse.in.last.6.months <= 7),]$No.of.times.30.DPD.or.worse.in.last.6.months <- 0.7403733            
+credit_card_woe_data[(credit_card_woe_data$No.of.times.30.DPD.or.worse.in.last.6.months == 0),]$No.of.times.30.DPD.or.worse.in.last.6.months <- -0.3888079                                           
+credit_card_woe_data[(credit_card_woe_data$No.of.times.30.DPD.or.worse.in.last.6.months == 1),]$No.of.times.30.DPD.or.worse.in.last.6.months <- 0.4648701                                           
+credit_card_woe_data[(credit_card_woe_data$No.of.times.30.DPD.or.worse.in.last.6.months>= 2)
+                      & (credit_card_woe_data$No.of.times.30.DPD.or.worse.in.last.6.months <= 7),]$No.of.times.30.DPD.or.worse.in.last.6.months <- 0.7403733            
 
 
 #7. No.of.Trades variable WOE analysis and mutation if required
@@ -1475,22 +1231,22 @@ print(IV$Tables$Total.No.of.Trades , row.names=FALSE)
 # [11,19]                                             8449    0.12187874      0.42575485      0.23621054
 # [20,44]                                             7423    0.10707846     -0.07201718      0.23674795
 
-data1_credit_card_eda[(data1_credit_card_eda$Total.No.of.Trades>= 0)
-                      & (data1_credit_card_eda$Total.No.of.Trades <= 1),]$Total.No.of.Trades <- -0.70424032            
+credit_card_woe_data[(credit_card_woe_data$Total.No.of.Trades>= 0)
+                      & (credit_card_woe_data$Total.No.of.Trades <= 1),]$Total.No.of.Trades <- -0.70424032            
 
-data1_credit_card_eda[(data1_credit_card_eda$Total.No.of.Trades ==2),]$Total.No.of.Trades <- -1.02386251             
-data1_credit_card_eda[(data1_credit_card_eda$Total.No.of.Trades == 3),]$Total.No.of.Trades <- -0.70424032            
-data1_credit_card_eda[(data1_credit_card_eda$Total.No.of.Trades == 4),]$Total.No.of.Trades <- -0.44545617           
-data1_credit_card_eda[(data1_credit_card_eda$Total.No.of.Trades == 5),]$Total.No.of.Trades <- -0.04761427
-data1_credit_card_eda[(data1_credit_card_eda$Total.No.of.Trades == 6),]$Total.No.of.Trades <- 0.12922060
-data1_credit_card_eda[(data1_credit_card_eda$Total.No.of.Trades>= 7)
-                      & (data1_credit_card_eda$Total.No.of.Trades <= 8),]$Total.No.of.Trades <-  0.37606696            
-data1_credit_card_eda[(data1_credit_card_eda$Total.No.of.Trades>= 9)
-                      & (data1_credit_card_eda$Total.No.of.Trades <= 10),]$Total.No.of.Trades <-  0.54138176            
-data1_credit_card_eda[(data1_credit_card_eda$Total.No.of.Trades>= 11)
-                      & (data1_credit_card_eda$Total.No.of.Trades <= 19),]$Total.No.of.Trades <-  0.42575485            
-data1_credit_card_eda[(data1_credit_card_eda$Total.No.of.Trades>= 20)
-                      & (data1_credit_card_eda$Total.No.of.Trades <= 44),]$Total.No.of.Trades <- -0.07201718          
+credit_card_woe_data[(credit_card_woe_data$Total.No.of.Trades ==2),]$Total.No.of.Trades <- -1.02386251             
+credit_card_woe_data[(credit_card_woe_data$Total.No.of.Trades == 3),]$Total.No.of.Trades <- -0.70424032            
+credit_card_woe_data[(credit_card_woe_data$Total.No.of.Trades == 4),]$Total.No.of.Trades <- -0.44545617           
+credit_card_woe_data[(credit_card_woe_data$Total.No.of.Trades == 5),]$Total.No.of.Trades <- -0.04761427
+credit_card_woe_data[(credit_card_woe_data$Total.No.of.Trades == 6),]$Total.No.of.Trades <- 0.12922060
+credit_card_woe_data[(credit_card_woe_data$Total.No.of.Trades>= 7)
+                      & (credit_card_woe_data$Total.No.of.Trades <= 8),]$Total.No.of.Trades <-  0.37606696            
+credit_card_woe_data[(credit_card_woe_data$Total.No.of.Trades>= 9)
+                      & (credit_card_woe_data$Total.No.of.Trades <= 10),]$Total.No.of.Trades <-  0.54138176            
+credit_card_woe_data[(credit_card_woe_data$Total.No.of.Trades>= 11)
+                      & (credit_card_woe_data$Total.No.of.Trades <= 19),]$Total.No.of.Trades <-  0.42575485            
+credit_card_woe_data[(credit_card_woe_data$Total.No.of.Trades>= 20)
+                      & (credit_card_woe_data$Total.No.of.Trades <= 44),]$Total.No.of.Trades <- -0.07201718          
 
 #  WE can aslo try replaing [0,1],[3,3],[20,44] with -0.07201718
 
@@ -1503,11 +1259,11 @@ print(IV$Tables$No.of.PL.trades.opened.in.last.6.months , row.names=FALSE)
 # [2,2]                                      12529           0.1807337       0.4386676       0.1918362
 # [3,6]                                      12646           0.1824214       0.3574090       0.2193472
 
-data1_credit_card_eda[(data1_credit_card_eda$No.of.PL.trades.opened.in.last.6.months == 0),]$No.of.PL.trades.opened.in.last.6.months <- -0.6521666             
-data1_credit_card_eda[(data1_credit_card_eda$No.of.PL.trades.opened.in.last.6.months == 1),]$No.of.PL.trades.opened.in.last.6.months <- 0.1963563              
-data1_credit_card_eda[(data1_credit_card_eda$No.of.PL.trades.opened.in.last.6.months == 2),]$No.of.PL.trades.opened.in.last.6.months <- 0.4386676              
-data1_credit_card_eda[(data1_credit_card_eda$No.of.PL.trades.opened.in.last.6.months>= 3)
-                      & (data1_credit_card_eda$No.of.PL.trades.opened.in.last.6.months <= 6),]$No.of.PL.trades.opened.in.last.6.months <- 0.3574090           
+credit_card_woe_data[(credit_card_woe_data$No.of.PL.trades.opened.in.last.6.months == 0),]$No.of.PL.trades.opened.in.last.6.months <- -0.6521666             
+credit_card_woe_data[(credit_card_woe_data$No.of.PL.trades.opened.in.last.6.months == 1),]$No.of.PL.trades.opened.in.last.6.months <- 0.1963563              
+credit_card_woe_data[(credit_card_woe_data$No.of.PL.trades.opened.in.last.6.months == 2),]$No.of.PL.trades.opened.in.last.6.months <- 0.4386676              
+credit_card_woe_data[(credit_card_woe_data$No.of.PL.trades.opened.in.last.6.months>= 3)
+                      & (credit_card_woe_data$No.of.PL.trades.opened.in.last.6.months <= 6),]$No.of.PL.trades.opened.in.last.6.months <- 0.3574090           
 
 #9.No.of.times.90.DPD.or.worse.in.last.12.months  variable WOE analysis and mutation if required
 print(IV$Tables$ No.of.times.90.DPD.or.worse.in.last.12.months,row.names=FALSE)
@@ -1517,10 +1273,10 @@ print(IV$Tables$ No.of.times.90.DPD.or.worse.in.last.12.months,row.names=FALSE)
 # [1,1]                                           11634       0.1678231      0.5086622    0.13388889
 # [2,5]                                           7688        0.1109011      0.7191401    0.21426427
 
-data1_credit_card_eda[(data1_credit_card_eda$No.of.times.90.DPD.or.worse.in.last.12.months == 0),]$No.of.times.90.DPD.or.worse.in.last.12.months <- -0.3583064            
-data1_credit_card_eda[(data1_credit_card_eda$No.of.times.90.DPD.or.worse.in.last.12.months == 1),]$No.of.times.90.DPD.or.worse.in.last.12.months <- 0.5086622            
-data1_credit_card_eda[(data1_credit_card_eda$No.of.times.90.DPD.or.worse.in.last.12.months>= 2)
-                      & (data1_credit_card_eda$No.of.times.90.DPD.or.worse.in.last.12.months <= 5),]$No.of.times.90.DPD.or.worse.in.last.12.months <- 0.7191401           
+credit_card_woe_data[(credit_card_woe_data$No.of.times.90.DPD.or.worse.in.last.12.months == 0),]$No.of.times.90.DPD.or.worse.in.last.12.months <- -0.3583064            
+credit_card_woe_data[(credit_card_woe_data$No.of.times.90.DPD.or.worse.in.last.12.months == 1),]$No.of.times.90.DPD.or.worse.in.last.12.months <- 0.5086622            
+credit_card_woe_data[(credit_card_woe_data$No.of.times.90.DPD.or.worse.in.last.12.months>= 2)
+                      & (credit_card_woe_data$No.of.times.90.DPD.or.worse.in.last.12.months <= 5),]$No.of.times.90.DPD.or.worse.in.last.12.months <- 0.7191401           
 
 
 #10.No.of.times.60.DPD.or.worse.in.last.6.months   variable WOE analysis and mutation if required
@@ -1530,9 +1286,9 @@ print(IV$Tables$ No.of.times.60.DPD.or.worse.in.last.6.months ,row.names=FALSE)
 # [0,0]                                           51379  0.7411537       -0.3379006   0.07269008
 # [1,5]                                           17944 0.2588463         0.6213074   0.20634740
 
-data1_credit_card_eda[(data1_credit_card_eda$No.of.times.60.DPD.or.worse.in.last.6.months == 0),]$No.of.times.60.DPD.or.worse.in.last.6.months <- -0.3379006           
-data1_credit_card_eda[(data1_credit_card_eda$No.of.times.60.DPD.or.worse.in.last.6.months>= 1)
-                      & (data1_credit_card_eda$No.of.times.60.DPD.or.worse.in.last.6.months <= 5),]$No.of.times.60.DPD.or.worse.in.last.6.months <- 0.6213074           
+credit_card_woe_data[(credit_card_woe_data$No.of.times.60.DPD.or.worse.in.last.6.months == 0),]$No.of.times.60.DPD.or.worse.in.last.6.months <- -0.3379006           
+credit_card_woe_data[(credit_card_woe_data$No.of.times.60.DPD.or.worse.in.last.6.months>= 1)
+                      & (credit_card_woe_data$No.of.times.60.DPD.or.worse.in.last.6.months <= 5),]$No.of.times.60.DPD.or.worse.in.last.6.months <- 0.6213074           
 
 #11.No.of.Inquiries.in.last.6.months..excluding.home...auto.loans.variable WOE analysis and mutation if required
 print(IV$Tables$ No.of.Inquiries.in.last.6.months..excluding.home...auto.loans.,row.names=FALSE)
@@ -1544,13 +1300,13 @@ print(IV$Tables$ No.of.Inquiries.in.last.6.months..excluding.home...auto.loans.,
 # [3,4]                                                            11471 0.1654718    0.50750241   0.2043942
 # [5,10]                                                           7272  0.1049002    0.00822695   0.2044014
 
-data1_credit_card_eda[(data1_credit_card_eda$No.of.Inquiries.in.last.6.months..excluding.home...auto.loans. == 0),]$No.of.Inquiries.in.last.6.months..excluding.home...auto.loans. <- -0.72079721          
-data1_credit_card_eda[(data1_credit_card_eda$No.of.Inquiries.in.last.6.months..excluding.home...auto.loans. == 1),]$No.of.Inquiries.in.last.6.months..excluding.home...auto.loans. <- 0.17784390           
-data1_credit_card_eda[(data1_credit_card_eda$No.of.Inquiries.in.last.6.months..excluding.home...auto.loans. == 2),]$No.of.Inquiries.in.last.6.months..excluding.home...auto.loans. <- 0.21203509          
-data1_credit_card_eda[(data1_credit_card_eda$No.of.Inquiries.in.last.6.months..excluding.home...auto.loans.>= 3)
-                      & (data1_credit_card_eda$No.of.Inquiries.in.last.6.months..excluding.home...auto.loans. <= 4),]$No.of.Inquiries.in.last.6.months..excluding.home...auto.loans. <- 0.50750241          
-data1_credit_card_eda[(data1_credit_card_eda$No.of.Inquiries.in.last.6.months..excluding.home...auto.loans.>= 5)
-                      & (data1_credit_card_eda$No.of.Inquiries.in.last.6.months..excluding.home...auto.loans. <= 10),]$No.of.Inquiries.in.last.6.months..excluding.home...auto.loans. <- 0.00822695          
+credit_card_woe_data[(credit_card_woe_data$No.of.Inquiries.in.last.6.months..excluding.home...auto.loans. == 0),]$No.of.Inquiries.in.last.6.months..excluding.home...auto.loans. <- -0.72079721          
+credit_card_woe_data[(credit_card_woe_data$No.of.Inquiries.in.last.6.months..excluding.home...auto.loans. == 1),]$No.of.Inquiries.in.last.6.months..excluding.home...auto.loans. <- 0.17784390           
+credit_card_woe_data[(credit_card_woe_data$No.of.Inquiries.in.last.6.months..excluding.home...auto.loans. == 2),]$No.of.Inquiries.in.last.6.months..excluding.home...auto.loans. <- 0.21203509          
+credit_card_woe_data[(credit_card_woe_data$No.of.Inquiries.in.last.6.months..excluding.home...auto.loans.>= 3)
+                      & (credit_card_woe_data$No.of.Inquiries.in.last.6.months..excluding.home...auto.loans. <= 4),]$No.of.Inquiries.in.last.6.months..excluding.home...auto.loans. <- 0.50750241          
+credit_card_woe_data[(credit_card_woe_data$No.of.Inquiries.in.last.6.months..excluding.home...auto.loans.>= 5)
+                      & (credit_card_woe_data$No.of.Inquiries.in.last.6.months..excluding.home...auto.loans. <= 10),]$No.of.Inquiries.in.last.6.months..excluding.home...auto.loans. <- 0.00822695          
 #12. No.of.times.30.DPD.or.worse.in.last.12.monthsvariable WOE analysis and mutation if required
 print(IV$Tables$ No.of.times.30.DPD.or.worse.in.last.12.months,row.names=FALSE)
 # No.of.times.30.DPD.or.worse.in.last.12.months     N         Percent        WOE              IV
@@ -1558,11 +1314,11 @@ print(IV$Tables$ No.of.times.30.DPD.or.worse.in.last.12.months,row.names=FALSE)
 # [1,2]                                           17541       0.2530329       0.2795787       0.09960293
 # [3,9]                                           7400        0.1067467       0.7963014       0.19801187
 
-data1_credit_card_eda[(data1_credit_card_eda$No.of.times.30.DPD.or.worse.in.last.12.months == 0),]$No.of.times.30.DPD.or.worse.in.last.12.months <- -0.3776992          
-data1_credit_card_eda[(data1_credit_card_eda$No.of.times.30.DPD.or.worse.in.last.12.months>= 1)
-                      & (data1_credit_card_eda$No.of.times.30.DPD.or.worse.in.last.12.months <= 2),]$No.of.Inquiries.in.last.6.months..excluding.home...auto.loans. <- 0.2795787          
-data1_credit_card_eda[(data1_credit_card_eda$No.of.times.30.DPD.or.worse.in.last.12.months>= 3)
-                      & (data1_credit_card_eda$No.of.times.30.DPD.or.worse.in.last.12.months<= 9),]$No.of.Inquiries.in.last.6.months..excluding.home...auto.loans. <- 0.7963014         
+credit_card_woe_data[(credit_card_woe_data$No.of.times.30.DPD.or.worse.in.last.12.months == 0),]$No.of.times.30.DPD.or.worse.in.last.12.months <- -0.3776992          
+credit_card_woe_data[(credit_card_woe_data$No.of.times.30.DPD.or.worse.in.last.12.months>= 1)
+                      & (credit_card_woe_data$No.of.times.30.DPD.or.worse.in.last.12.months <= 2),]$No.of.Inquiries.in.last.6.months..excluding.home...auto.loans. <- 0.2795787          
+credit_card_woe_data[(credit_card_woe_data$No.of.times.30.DPD.or.worse.in.last.12.months>= 3)
+                      & (credit_card_woe_data$No.of.times.30.DPD.or.worse.in.last.12.months<= 9),]$No.of.Inquiries.in.last.6.months..excluding.home...auto.loans. <- 0.7963014         
 
 #13.  No.of.trades.opened.in.last.6.months variable WOE analysis and mutation if required
 print(IV$Tables$No.of.trades.opened.in.last.6.months,row.names=FALSE)
@@ -1574,15 +1330,14 @@ print(IV$Tables$No.of.trades.opened.in.last.6.months,row.names=FALSE)
 # [4,4]                                  6283       0.0906337          0.5213678      0.18273513
 # [5,12]                                 9712       0.1400978          0.1343678      0.18542600
 
-colnames(data1_credit_card_eda)
-summary(data1_credit_card_eda$No.of.trades.opened.in.last.6.months)
-data1_credit_card_eda[(data1_credit_card_eda$No.of.trades.opened.in.last.6.months == 0),]$No.of.trades.opened.in.last.6.months <- -0.6702805        
-data1_credit_card_eda[(data1_credit_card_eda$No.of.trades.opened.in.last.6.months == 1),]$No.of.trades.opened.in.last.6.months <- -0.4765630          
-data1_credit_card_eda[(data1_credit_card_eda$No.of.trades.opened.in.last.6.months == 2),]$No.of.trades.opened.in.last.6.months <- 0.2316003          
-data1_credit_card_eda[(data1_credit_card_eda$No.of.trades.opened.in.last.6.months == 3),]$No.of.trades.opened.in.last.6.months <- 0.4309928         
-data1_credit_card_eda[(data1_credit_card_eda$No.of.trades.opened.in.last.6.months == 4),]$No.of.trades.opened.in.last.6.months <-  0.5213678        
-data1_credit_card_eda[(data1_credit_card_eda$No.of.trades.opened.in.last.6.months>= 5)
-                      & (data1_credit_card_eda$No.of.trades.opened.in.last.6.months<= 12),]$No.of.trades.opened.in.last.6.months <- 0.1343678          
+colnames(credit_card_woe_data)
+credit_card_woe_data[(credit_card_woe_data$No.of.trades.opened.in.last.6.months == 0),]$No.of.trades.opened.in.last.6.months <- -0.6702805        
+credit_card_woe_data[(credit_card_woe_data$No.of.trades.opened.in.last.6.months == 1),]$No.of.trades.opened.in.last.6.months <- -0.4765630          
+credit_card_woe_data[(credit_card_woe_data$No.of.trades.opened.in.last.6.months == 2),]$No.of.trades.opened.in.last.6.months <- 0.2316003          
+credit_card_woe_data[(credit_card_woe_data$No.of.trades.opened.in.last.6.months == 3),]$No.of.trades.opened.in.last.6.months <- 0.4309928         
+credit_card_woe_data[(credit_card_woe_data$No.of.trades.opened.in.last.6.months == 4),]$No.of.trades.opened.in.last.6.months <-  0.5213678        
+credit_card_woe_data[(credit_card_woe_data$No.of.trades.opened.in.last.6.months>= 5)
+                      & (credit_card_woe_data$No.of.trades.opened.in.last.6.months<= 12),]$No.of.trades.opened.in.last.6.months <- 0.1343678          
 
 # There is some issue here in this variable as this feild is showing only values =12 though i see number of values here 
 # i am getting the below error 
@@ -1595,13 +1350,13 @@ print(IV$Tables$No.of.times.60.DPD.or.worse.in.last.12.months,row.names=FALSE)
 # [0,0]                                               45391       0.6547755      -0.3529942     0.06961871
 # [1,1]                                               12778       0.1843255       0.2128601     0.07883339
 # [2,7]                                               11154       0.1608990       0.6916731     0.18530510
-data1_credit_card_eda[(data1_credit_card_eda$No.of.times.60.DPD.or.worse.in.last.12.months == 0),]$No.of.times.60.DPD.or.worse.in.last.12.months <- -0.3529942       
-data1_credit_card_eda[(data1_credit_card_eda$No.of.times.60.DPD.or.worse.in.last.12.months == 1),]$No.of.times.60.DPD.or.worse.in.last.12.months <- -0.2128601      
-data1_credit_card_eda[(data1_credit_card_eda$No.of.times.60.DPD.or.worse.in.last.12.months>= 2)
-                      & (data1_credit_card_eda$No.of.times.60.DPD.or.worse.in.last.12.months<= 7),]$No.of.trades.opened.in.last.6.months <- 0.6916731          
+credit_card_woe_data[(credit_card_woe_data$No.of.times.60.DPD.or.worse.in.last.12.months == 0),]$No.of.times.60.DPD.or.worse.in.last.12.months <- -0.3529942       
+credit_card_woe_data[(credit_card_woe_data$No.of.times.60.DPD.or.worse.in.last.12.months == 1),]$No.of.times.60.DPD.or.worse.in.last.12.months <- -0.2128601      
+credit_card_woe_data[(credit_card_woe_data$No.of.times.60.DPD.or.worse.in.last.12.months>= 2)
+                      & (credit_card_woe_data$No.of.times.60.DPD.or.worse.in.last.12.months<= 7),]$No.of.trades.opened.in.last.6.months <- 0.6916731          
 
 # i am getting the below error here 
-# Error in data1_credit_card_eda[(data1_credit_card_eda$No.of.times.60.DPD.or.worse.in.last.12.months >=  : 
+# Error in credit_card_woe_data[(credit_card_woe_data$No.of.times.60.DPD.or.worse.in.last.12.months >=  : 
 #                                   cannot change value of locked binding for '*tmp*'
 #15.No.of.times.90.DPD.or.worse.in.last.6.months variable WOE analysis and mutation if required
 print(IV$Tables$No.of.times.90.DPD.or.worse.in.last.6.months,row.names=FALSE)
@@ -1609,12 +1364,12 @@ print(IV$Tables$No.of.times.90.DPD.or.worse.in.last.6.months,row.names=FALSE)
 # [0,0]                                          54164    0.781328       -0.2615304      0.04748669
 # [1,3]                                          15159    0.218672        0.6208793      0.16022119
 
-data1_credit_card_eda[(data1_credit_card_eda$No.of.times.90.DPD.or.worse.in.last.6.months == 0),]$No.of.times.90.DPD.or.worse.in.last.6.months <- -0.2615304      
-data1_credit_card_eda[(data1_credit_card_eda$No.of.times.90.DPD.or.worse.in.last.6.months>= 1)
-                      & (data1_credit_card_eda$No.of.times.90.DPD.or.worse.in.last.6.months<= 3),]$No.of.times.90.DPD.or.worse.in.last.6.months <- 0.6208793          
+credit_card_woe_data[(credit_card_woe_data$No.of.times.90.DPD.or.worse.in.last.6.months == 0),]$No.of.times.90.DPD.or.worse.in.last.6.months <- -0.2615304      
+credit_card_woe_data[(credit_card_woe_data$No.of.times.90.DPD.or.worse.in.last.6.months>= 1)
+                      & (credit_card_woe_data$No.of.times.90.DPD.or.worse.in.last.6.months<= 3),]$No.of.times.90.DPD.or.worse.in.last.6.months <- 0.6208793          
 
 # i am getting the below error here 
-# Error in data1_credit_card_eda[(data1_credit_card_eda$No.of.times.60.DPD.or.worse.in.last.12.months >=  : 
+# Error in credit_card_woe_data[(credit_card_woe_data$No.of.times.60.DPD.or.worse.in.last.12.months >=  : 
 #                                   cannot change value of locked binding for '*tmp*'
 
 #16.No.of.months.in.current.residence variable WOE analysis and mutation if required
@@ -1626,18 +1381,18 @@ print(IV$Tables$No.of.months.in.current.residence,row.names=FALSE)
 # [50,72]                                        6951           0.10026975      0.13676102    0.07580126
 # [73,97]                                        6870           0.09910131      0.13962510    0.07786158
 # [98,126]                                       7044           0.10161130      -0.07216751   0.07837365
-data1_credit_card_eda[(data1_credit_card_eda$No.of.months.in.current.residence>= 6)
-                      & (data1_credit_card_eda$No.of.months.in.current.residence<= 9),]$No.of.months.in.current.residence <- -0.27278704          
-data1_credit_card_eda[(data1_credit_card_eda$No.of.months.in.current.residence>= 10)
-                      & (data1_credit_card_eda$No.of.months.in.current.residence<= 28),]$No.of.months.in.current.residence <- 0.49517703         
-data1_credit_card_eda[(data1_credit_card_eda$No.of.months.in.current.residence>= 29)
-                      & (data1_credit_card_eda$No.of.months.in.current.residence<= 49),]$No.of.months.in.current.residence <- 0.29634371        
-data1_credit_card_eda[(data1_credit_card_eda$No.of.months.in.current.residence>= 50)
-                      & (data1_credit_card_eda$No.of.months.in.current.residence<= 72),]$No.of.months.in.current.residence <- 0.13962510       
-data1_credit_card_eda[(data1_credit_card_eda$No.of.months.in.current.residence>= 73)
-                      & (data1_credit_card_eda$No.of.months.in.current.residence<= 97),]$No.of.months.in.current.residence <- 0.13962510       
-data1_credit_card_eda[(data1_credit_card_eda$No.of.months.in.current.residence>= 98)
-                      & (data1_credit_card_eda$No.of.months.in.current.residence<= 126),]$No.of.months.in.current.residence <- -0.07216751       
+credit_card_woe_data[(credit_card_woe_data$No.of.months.in.current.residence>= 6)
+                      & (credit_card_woe_data$No.of.months.in.current.residence<= 9),]$No.of.months.in.current.residence <- -0.27278704          
+credit_card_woe_data[(credit_card_woe_data$No.of.months.in.current.residence>= 10)
+                      & (credit_card_woe_data$No.of.months.in.current.residence<= 28),]$No.of.months.in.current.residence <- 0.49517703         
+credit_card_woe_data[(credit_card_woe_data$No.of.months.in.current.residence>= 29)
+                      & (credit_card_woe_data$No.of.months.in.current.residence<= 49),]$No.of.months.in.current.residence <- 0.29634371        
+credit_card_woe_data[(credit_card_woe_data$No.of.months.in.current.residence>= 50)
+                      & (credit_card_woe_data$No.of.months.in.current.residence<= 72),]$No.of.months.in.current.residence <- 0.13962510       
+credit_card_woe_data[(credit_card_woe_data$No.of.months.in.current.residence>= 73)
+                      & (credit_card_woe_data$No.of.months.in.current.residence<= 97),]$No.of.months.in.current.residence <- 0.13962510       
+credit_card_woe_data[(credit_card_woe_data$No.of.months.in.current.residence>= 98)
+                      & (credit_card_woe_data$No.of.months.in.current.residence<= 126),]$No.of.months.in.current.residence <- -0.07216751       
 
 ##17. Income variable WOE analysis and mutation if required
 print(IV$Tables$ Income,row.names=FALSE)
@@ -1653,26 +1408,26 @@ print(IV$Tables$ Income,row.names=FALSE)
 # [37,41]                       6686 0.09644707     -0.260808691     0.02837914
 # [42,48]                       7738 0.11162241     -0.177301167     0.03161685
 # [49,60]                       7259 0.10471272     -0.359873425     0.04315356
-data1_credit_card_eda[(data1_credit_card_eda$Income >= 1)
-                      &(data1_credit_card_eda$Income <= 5),]$Income <- 0.312564105                     
-data1_credit_card_eda[(data1_credit_card_eda$Income >= 6)
-                      &(data1_credit_card_eda$Income <= 10),]$Income <- 0.277805051
-data1_credit_card_eda[(data1_credit_card_eda$Income >= 11)
-                      &(data1_credit_card_eda$Income <= 16),]$Income <- 0.067205150
-data1_credit_card_eda[(data1_credit_card_eda$Income >= 17)
-                      &(data1_credit_card_eda$Income <= 21),]$Income <- 0.083838715
-data1_credit_card_eda[(data1_credit_card_eda$Income >= 22)
-                      &(data1_credit_card_eda$Income <= 26),]$Income <- 0.008747956
-data1_credit_card_eda[(data1_credit_card_eda$Income >= 27)
-                      &(data1_credit_card_eda$Income <= 31),]$Income <- 0.083838715
-data1_credit_card_eda[(data1_credit_card_eda$Income >= 32)
-                      &(data1_credit_card_eda$Income <= 36),]$Income <- -0.160484187 
-data1_credit_card_eda[(data1_credit_card_eda$Income >= 37)
-                      &(data1_credit_card_eda$Income <= 41),]$Income <- 0.260808691
-data1_credit_card_eda[(data1_credit_card_eda$Income >= 42)
-                      &(data1_credit_card_eda$Income <= 48),]$Income <- -0.177301167
-data1_credit_card_eda[(data1_credit_card_eda$Income >= 49)
-                      &(data1_credit_card_eda$Income <= 60),]$Income <- -0.359873425
+credit_card_woe_data[(credit_card_woe_data$Income >= 1)
+                      &(credit_card_woe_data$Income <= 5),]$Income <- 0.312564105                     
+credit_card_woe_data[(credit_card_woe_data$Income >= 6)
+                      &(credit_card_woe_data$Income <= 10),]$Income <- 0.277805051
+credit_card_woe_data[(credit_card_woe_data$Income >= 11)
+                      &(credit_card_woe_data$Income <= 16),]$Income <- 0.067205150
+credit_card_woe_data[(credit_card_woe_data$Income >= 17)
+                      &(credit_card_woe_data$Income <= 21),]$Income <- 0.083838715
+credit_card_woe_data[(credit_card_woe_data$Income >= 22)
+                      &(credit_card_woe_data$Income <= 26),]$Income <- 0.008747956
+credit_card_woe_data[(credit_card_woe_data$Income >= 27)
+                      &(credit_card_woe_data$Income <= 31),]$Income <- 0.083838715
+credit_card_woe_data[(credit_card_woe_data$Income >= 32)
+                      &(credit_card_woe_data$Income <= 36),]$Income <- -0.160484187 
+credit_card_woe_data[(credit_card_woe_data$Income >= 37)
+                      &(credit_card_woe_data$Income <= 41),]$Income <- 0.260808691
+credit_card_woe_data[(credit_card_woe_data$Income >= 42)
+                      &(credit_card_woe_data$Income <= 48),]$Income <- -0.177301167
+credit_card_woe_data[(credit_card_woe_data$Income >= 49)
+                      &(credit_card_woe_data$Income <= 60),]$Income <- -0.359873425
 
 # we can see if we can merge [32,36] and [42,48]
 # i am getting the below error in this code above 
@@ -1693,26 +1448,26 @@ print(IV$Tables$ No.of.months.in.current.company,row.names=FALSE)
 # [54,61]                                                 7742 0.11168011 -0.21998037 0.021604939
 # [62,133]                                                 7003 0.10101986  0.06437921 0.022036193
 
-data1_credit_card_eda[(data1_credit_card_eda$No.of.months.in.current.company  >= 3)
-                      &(data1_credit_card_eda$No.of.months.in.current.company  <= 5),]$No.of.months.in.current.company  <- 0.10158530
-data1_credit_card_eda[(data1_credit_card_eda$No.of.months.in.current.company  >= 6)
-                      &(data1_credit_card_eda$No.of.months.in.current.company  <= 12),]$No.of.months.in.current.company  <- 0.17606079
-data1_credit_card_eda[(data1_credit_card_eda$No.of.months.in.current.company  >= 13)
-                      &(data1_credit_card_eda$No.of.months.in.current.company  <= 19),]$No.of.months.in.current.company  <- 0.20859828
-data1_credit_card_eda[(data1_credit_card_eda$No.of.months.in.current.company  >= 20)
-                      &(data1_credit_card_eda$No.of.months.in.current.company  <= 26),]$No.of.months.in.current.company  <- 0.03957811
-data1_credit_card_eda[(data1_credit_card_eda$No.of.months.in.current.company  >= 27)
-                      &(data1_credit_card_eda$No.of.months.in.current.company  <= 33),]$No.of.months.in.current.company  <- -0.08523204
-data1_credit_card_eda[(data1_credit_card_eda$No.of.months.in.current.company  >= 34)
-                      &(data1_credit_card_eda$No.of.months.in.current.company  <= 40),]$No.of.months.in.current.company  <- 0.02250839
-data1_credit_card_eda[(data1_credit_card_eda$No.of.months.in.current.company  >= 41)
-                      &(data1_credit_card_eda$No.of.months.in.current.company  <= 47),]$No.of.months.in.current.company  <- -0.17191682
-data1_credit_card_eda[(data1_credit_card_eda$No.of.months.in.current.company  >= 48)
-                      &(data1_credit_card_eda$No.of.months.in.current.company  <= 53),]$No.of.months.in.current.company  <- -0.22155705
-data1_credit_card_eda[(data1_credit_card_eda$No.of.months.in.current.company  >= 54)
-                      &(data1_credit_card_eda$No.of.months.in.current.company  <= 61),]$No.of.months.in.current.company  <- -0.22155705
-data1_credit_card_eda[(data1_credit_card_eda$No.of.months.in.current.company  >= 62)
-                      &(data1_credit_card_eda$No.of.months.in.current.company  <= 133),]$No.of.months.in.current.company  <- 0.06437921
+credit_card_woe_data[(credit_card_woe_data$No.of.months.in.current.company  >= 3)
+                      &(credit_card_woe_data$No.of.months.in.current.company  <= 5),]$No.of.months.in.current.company  <- 0.10158530
+credit_card_woe_data[(credit_card_woe_data$No.of.months.in.current.company  >= 6)
+                      &(credit_card_woe_data$No.of.months.in.current.company  <= 12),]$No.of.months.in.current.company  <- 0.17606079
+credit_card_woe_data[(credit_card_woe_data$No.of.months.in.current.company  >= 13)
+                      &(credit_card_woe_data$No.of.months.in.current.company  <= 19),]$No.of.months.in.current.company  <- 0.20859828
+credit_card_woe_data[(credit_card_woe_data$No.of.months.in.current.company  >= 20)
+                      &(credit_card_woe_data$No.of.months.in.current.company  <= 26),]$No.of.months.in.current.company  <- 0.03957811
+credit_card_woe_data[(credit_card_woe_data$No.of.months.in.current.company  >= 27)
+                      &(credit_card_woe_data$No.of.months.in.current.company  <= 33),]$No.of.months.in.current.company  <- -0.08523204
+credit_card_woe_data[(credit_card_woe_data$No.of.months.in.current.company  >= 34)
+                      &(credit_card_woe_data$No.of.months.in.current.company  <= 40),]$No.of.months.in.current.company  <- 0.02250839
+credit_card_woe_data[(credit_card_woe_data$No.of.months.in.current.company  >= 41)
+                      &(credit_card_woe_data$No.of.months.in.current.company  <= 47),]$No.of.months.in.current.company  <- -0.17191682
+credit_card_woe_data[(credit_card_woe_data$No.of.months.in.current.company  >= 48)
+                      &(credit_card_woe_data$No.of.months.in.current.company  <= 53),]$No.of.months.in.current.company  <- -0.22155705
+credit_card_woe_data[(credit_card_woe_data$No.of.months.in.current.company  >= 54)
+                      &(credit_card_woe_data$No.of.months.in.current.company  <= 61),]$No.of.months.in.current.company  <- -0.22155705
+credit_card_woe_data[(credit_card_woe_data$No.of.months.in.current.company  >= 62)
+                      &(credit_card_woe_data$No.of.months.in.current.company  <= 133),]$No.of.months.in.current.company  <- 0.06437921
 ##19. Presence.of.open.home.loan WOE analysis and mutation if required
 print(IV$Tables$ Presence.of.open.home.loan,row.names=FALSE)
 
@@ -1720,8 +1475,8 @@ print(IV$Tables$ Presence.of.open.home.loan,row.names=FALSE)
 # [0,0]                                            51344 0.7406488  0.07138878 0.003900401
 # [1,1]                                            17979 0.2593512 -0.23420948 0.016696682
 
-data1_credit_card_eda[(data1_credit_card_eda$Presence.of.open.home.loan == 0),]$Presence.of.open.home.loan <- 0.07138878      
-data1_credit_card_eda[(data1_credit_card_eda$Presence.of.open.home.loan == 1),]$Presence.of.open.home.loan <- -0.23420948     
+credit_card_woe_data[(credit_card_woe_data$Presence.of.open.home.loan == 0),]$Presence.of.open.home.loan <- 0.07138878      
+credit_card_woe_data[(credit_card_woe_data$Presence.of.open.home.loan == 1),]$Presence.of.open.home.loan <- -0.23420948     
 
 ##20. No.of.dependents WOE analysis and mutation if required
 print(IV$Tables$ No.of.dependents,row.names=FALSE)
@@ -1734,11 +1489,11 @@ print(IV$Tables$ No.of.dependents,row.names=FALSE)
 # [5,5]                                  11782        0.1699580 -0.002762942 0.0027640215
 
 
-data1_credit_card_eda[(data1_credit_card_eda$No.of.dependents == 1),]$No.of.dependents <- 0.043755300     
-data1_credit_card_eda[(data1_credit_card_eda$No.of.dependents == 2),]$No.of.dependents <- -0.083590902     
-data1_credit_card_eda[(data1_credit_card_eda$No.of.dependents == 3),]$No.of.dependents <- 0.056769045     
-data1_credit_card_eda[(data1_credit_card_eda$No.of.dependents == 4),]$No.of.dependents <- -0.028751801     
-data1_credit_card_eda[(data1_credit_card_eda$No.of.dependents == 5),]$No.of.dependents <- -0.002762942     
+credit_card_woe_data[(credit_card_woe_data$No.of.dependents == 1),]$No.of.dependents <- 0.043755300     
+credit_card_woe_data[(credit_card_woe_data$No.of.dependents == 2),]$No.of.dependents <- -0.083590902     
+credit_card_woe_data[(credit_card_woe_data$No.of.dependents == 3),]$No.of.dependents <- 0.056769045     
+credit_card_woe_data[(credit_card_woe_data$No.of.dependents == 4),]$No.of.dependents <- -0.028751801     
+credit_card_woe_data[(credit_card_woe_data$No.of.dependents == 5),]$No.of.dependents <- -0.002762942     
 
 ##21.   Profession WOE analysis and mutation if required
 print(IV$Tables$  Profession,row.names=FALSE)
@@ -1748,12 +1503,12 @@ print(IV$Tables$  Profession,row.names=FALSE)
 # SE                        13835           0.199573       0.08717894    0.0019819216
 # SE_PROF                   16116           0.232477       -0.01328905 0.0020227280
 
-data1_credit_card_eda[(data1_credit_card_eda$Profession == "SAL"),]$Profession <- -0.02680598 
-data1_credit_card_eda[(data1_credit_card_eda$Profession == "SE" ),]$Profession <- 0.08717894    
-data1_credit_card_eda[(data1_credit_card_eda$Profession == "SE_PROF" ),]$Profession <- 0.232477    
-data1_credit_card_eda$Profession <- as.numeric(data1_credit_card_eda$Profession)
+credit_card_woe_data[(credit_card_woe_data$Profession == "SAL"),]$Profession <- -0.02680598 
+credit_card_woe_data[(credit_card_woe_data$Profession == "SE" ),]$Profession <- 0.08717894    
+credit_card_woe_data[(credit_card_woe_data$Profession == "SE_PROF" ),]$Profession <- 0.232477    
+credit_card_woe_data$Profession <- as.numeric(credit_card_woe_data$Profession)
 # getting this error for all the below variables 
-#Error in `[.data.frame`(`*tmp*`, (data1_credit_card_eda$Profession ==  : 
+#Error in `[.data.frame`(`*tmp*`, (credit_card_woe_data$Profession ==  : 
 #object 'SE_PROF' not found#
 
 ##22.Presence.of.open.auto.loan  WOE analysis and mutation if required
@@ -1763,8 +1518,8 @@ print(IV$Tables$Presence.of.open.auto.loan ,row.names=FALSE)
 # [0,0]                                     63425 0.91492001  0.01179038     0.0001278745
 # [1,1]                                     5898  0.08507999 -0.13558199      0.0015983507
 
-data1_credit_card_eda[(data1_credit_card_eda$Presence.of.open.auto.loan == 0),]$Presence.of.open.auto.loan <- 0.01179038  
-data1_credit_card_eda[(data1_credit_card_eda$Presence.of.open.auto.loan == 1 ),]$Presence.of.open.auto.loan <- -0.13558199 
+credit_card_woe_data[(credit_card_woe_data$Presence.of.open.auto.loan == 0),]$Presence.of.open.auto.loan <- 0.01179038  
+credit_card_woe_data[(credit_card_woe_data$Presence.of.open.auto.loan == 1 ),]$Presence.of.open.auto.loan <- -0.13558199 
 
 
 ##23.AgeCategory  WOE analysis and mutation if required
@@ -1775,10 +1530,10 @@ print(IV$Tables$AgeCategory ,row.names=FALSE)
 # Seniors                          4795  0.069168963    -0.025015444      5.699471e-05
 # Youth                            293  0.004226591     -0.590204941      1.190403e-03
 
-data1_credit_card_eda[(data1_credit_card_eda$AgeCategory  ==Adults),]$AgeCategory <- 0.003911577 
-data1_credit_card_eda[(data1_credit_card_eda$AgeCategory == Seniors),]$AgeCategory <- -0.025015444 
-data1_credit_card_eda[(data1_credit_card_eda$AgeCategory == Youth ),]$AgeCategory <- -0.590204941
-data1_credit_card_eda$AgeCategory <- as.numeric(data1_credit_card_eda$AgeCategory)
+credit_card_woe_data[(credit_card_woe_data$AgeCategory  ==Adults),]$AgeCategory <- 0.003911577 
+credit_card_woe_data[(credit_card_woe_data$AgeCategory == Seniors),]$AgeCategory <- -0.025015444 
+credit_card_woe_data[(credit_card_woe_data$AgeCategory == Youth ),]$AgeCategory <- -0.590204941
+credit_card_woe_data$AgeCategory <- as.numeric(credit_card_woe_data$AgeCategory)
 
 ##24.Type.of.residence WOE analysis and mutation if required
 print(IV$Tables$Type.of.residence ,row.names=FALSE)
@@ -1791,12 +1546,12 @@ print(IV$Tables$Type.of.residence ,row.names=FALSE)
 # Rented                                    51890    0.74852502      -0.0031805681      0.0009113461
 
 #  Looks like we can combine company provided and Living with parents on the basis of  WOE values
-data1_credit_card_eda[(data1_credit_card_eda$Type.of.residence == "Company provided" ),]$Type.of.residence <-0.0765454687
-data1_credit_card_eda[(data1_credit_card_eda$Type.of.residence == "Living with Parents"  ),]$Type.of.residence <-0.0765454687
-data1_credit_card_eda[(data1_credit_card_eda$Type.of.residence == "Others"   ),]$Type.of.residence <- -0.5281807385
-data1_credit_card_eda[(data1_credit_card_eda$Type.of.residence == "Owned"   ),]$Type.of.residence <- -0.0007681379
-data1_credit_card_eda[(data1_credit_card_eda$Type.of.residence == "Rented"    ),]$Type.of.residence <- -0.0031805681
-data1_credit_card_eda$Type.of.residence <- as.numeric(data1_credit_card_eda$Type.of.residence)
+credit_card_woe_data[(credit_card_woe_data$Type.of.residence == "Company provided" ),]$Type.of.residence <-0.0765454687
+credit_card_woe_data[(credit_card_woe_data$Type.of.residence == "Living with Parents"  ),]$Type.of.residence <-0.0765454687
+credit_card_woe_data[(credit_card_woe_data$Type.of.residence == "Others"   ),]$Type.of.residence <- -0.5281807385
+credit_card_woe_data[(credit_card_woe_data$Type.of.residence == "Owned"   ),]$Type.of.residence <- -0.0007681379
+credit_card_woe_data[(credit_card_woe_data$Type.of.residence == "Rented"    ),]$Type.of.residence <- -0.0031805681
+credit_card_woe_data$Type.of.residence <- as.numeric(credit_card_woe_data$Type.of.residence)
 
 ##25.Education WOE analysis and mutation if required
 print(IV$Tables$Education ,row.names=FALSE)
@@ -1809,12 +1564,12 @@ print(IV$Tables$Education ,row.names=FALSE)
 # Professional                24219  0.349364569       -0.016781413    7.728863e-04
 
 
-data1_credit_card_eda[(data1_credit_card_eda$Education == "Bachelor"),]$Education <- 0.015453894
-data1_credit_card_eda[(data1_credit_card_eda$Education == "Masters"),]$Education <- 0.007524619
-data1_credit_card_eda[(data1_credit_card_eda$Education == "Others"),]$Education <- 0.507970381
-data1_credit_card_eda[(data1_credit_card_eda$Education == "Phd" ),]$Education <- -0.026487167
-data1_credit_card_eda[(data1_credit_card_eda$Education == "Professional"),]$Education <- -0.016781413
-data1_credit_card_eda$Education <- as.numeric(data1_credit_card_eda$Education)
+credit_card_woe_data[(credit_card_woe_data$Education == "Bachelor"),]$Education <- 0.015453894
+credit_card_woe_data[(credit_card_woe_data$Education == "Masters"),]$Education <- 0.007524619
+credit_card_woe_data[(credit_card_woe_data$Education == "Others"),]$Education <- 0.507970381
+credit_card_woe_data[(credit_card_woe_data$Education == "Phd" ),]$Education <- -0.026487167
+credit_card_woe_data[(credit_card_woe_data$Education == "Professional"),]$Education <- -0.016781413
+credit_card_woe_data$Education <- as.numeric(credit_card_woe_data$Education)
 # GETTING the below error for all categories 
 
 ##26.Gender WOE analysis and mutation if required
@@ -1823,9 +1578,9 @@ print(IV$Tables$Gender ,row.names=FALSE)
 # F                             16393 0.2364727  0.03360694 0.000271225
 # M                             52930 0.7635273 -0.01062152 0.000356946
 
-data1_credit_card_eda[(data1_credit_card_eda$Gender == "F"),]$Gender <- 0.03360694
-data1_credit_card_eda[(data1_credit_card_eda$Gender == "M"),]$Gender <- -0.01062152
-data1_credit_card_eda$Gender <- as.numeric(data1_credit_card_eda$Gender)
+credit_card_woe_data[(credit_card_woe_data$Gender == "F"),]$Gender <- 0.03360694
+credit_card_woe_data[(credit_card_woe_data$Gender == "M"),]$Gender <- -0.01062152
+credit_card_woe_data$Gender <- as.numeric(credit_card_woe_data$Gender)
 
 ##27.Gender Marital.Status analysis and mutation if required
 print(IV$Tables$Marital.Status ,row.names=FALSE)
@@ -1833,17 +1588,17 @@ print(IV$Tables$Marital.Status ,row.names=FALSE)
 # Marital.Status                 N   Percent          WOE           IV
 # Married                     59085 0.8523145 -0.004180567       1.486755e-05
 # Single                      10238 0.1476855  0.023819161       9.957677e-05
-data1_credit_card_eda[(data1_credit_card_eda$Marital.Status   == "Married" ),]$Marital.Status   <- -0.004180567 
-data1_credit_card_eda[(data1_credit_card_eda$Marital.Status   == "Single" ),]$Marital.Status   <- 0.023819161 
-data1_credit_card_eda$Marital.Status <- as.numeric(data1_credit_card_eda$Marital.Status)
-colnames(data1_credit_card_eda)
+credit_card_woe_data[(credit_card_woe_data$Marital.Status   == "Married" ),]$Marital.Status   <- -0.004180567 
+credit_card_woe_data[(credit_card_woe_data$Marital.Status   == "Single" ),]$Marital.Status   <- 0.023819161 
+credit_card_woe_data$Marital.Status <- as.numeric(credit_card_woe_data$Marital.Status)
+colnames(credit_card_woe_data)
 
 #--------------------------------------------------------------------
 # 4. Data Modeling - Logistic regression
 #--------------------------------------------------------------------
 
 # Data modeling on Demographic data
-credit_card_demographic <- data1_credit_card_eda[,c("Gender",                                                      
+credit_card_demographic <- credit_card_woe_data[,c("Gender",                                                      
                                                     "Marital.Status",
                                                     "No.of.dependents",
                                                     "Income",
@@ -1983,10 +1738,10 @@ spec
 # splitting the data between train and test
 #dummies<- data.frame(sapply(credit_card_fact, 
 #                            function(x) data.frame(model.matrix(~x-1,data =credit_card_fact))[,-1]))
-colnames(data1_credit_card_eda)
+colnames(credit_card_woe_data)
 #credit_card_regression <- cbind(credit_card_num_vars,dummies)
-credit_card_regression <- data1_credit_card_eda
-credit_card_regression$Performance.Tag <- as.factor(data1_credit_card_eda$Performance.Tag)
+credit_card_regression <- credit_card_woe_data
+credit_card_regression$Performance.Tag <- as.factor(credit_card_woe_data$Performance.Tag)
 
 set.seed(100)
 
@@ -2065,16 +1820,8 @@ model_9 <- glm(Performance.Tag ~ No.of.times.30.DPD.or.worse.in.last.12.months +
 summary(model_9)
 vif(model_9)
 
-#Remove No.of.trades.opened.in.last.12.months
-model_10 <- glm(Performance.Tag ~ No.of.times.30.DPD.or.worse.in.last.12.months + 
-                  Avgas.CC.Utilization.in.last.12.months + 
-                  No.of.Inquiries.in.last.12.months..excluding.home...auto.loans. 
-                , family = "binomial", data = train)
-summary(model_10)
-vif(model_10)
 
-
-final_model<- model_10
+final_model<- model_9
 summary(final_model)
 
 ### Model Evaluation
@@ -2267,19 +2014,6 @@ print(total_expected_loass)
 
 auto_rejection_rate <- sum(data_score_card$pred_performance_tag)/nrow(data_score_card)
 auto_approval_rate = 1 - auto_rejection_rate
-
-
-
-
-#-------------------------------
-#install.packages("RGT")
-#install.packages("rpart.plot")
-#install.packages("rpart")
-#install.packages("rattle")
-
-library(rpart)
-library(rattle)
-library(rpart.plot)
 
 Credit_card_DT <- credit_card_eda[, -which(names(credit_card_eda) %in% c("IncomeRange", "Residence.Years", "Company.Years", "x_Avgas.CC.Utilization.in.last.12.months" ))]
 colnames(Credit_card_DT)
