@@ -17,7 +17,7 @@ library(caTools)
 library(GGally)
 library(Information)
 library(outliers)
-library(Hmisc)
+#library(Hmisc)
 library(dplyr)
 library(magrittr)
 library(knitr)
@@ -641,9 +641,9 @@ plot_grid(ggplot(credit_card_eda, aes(x=Performance.Tag,y=Outstanding.Balance.in
             coord_flip() +theme(legend.position="none"),
           ggplot(credit_card_eda, aes(x=Performance.Tag,y=Total.No.of.Trades, fill=Performance.Tag))+ geom_boxplot(width=0.2)+
             coord_flip() + box_theme_y,
-          ggplot(credit_card_eda, aes(x=Performance.Tag,y=No.of.Inquiries.in.last.12.months, fill=Performance.Tag))+ geom_boxplot(width=0.2)+
+          ggplot(credit_card_eda, aes(x=Performance.Tag,y=No.of.Inquiries.in.last.12.months..excluding.home...auto.loans., fill=Performance.Tag))+ geom_boxplot(width=0.2)+
             coord_flip() + box_theme_y,
-          ggplot(credit_card_eda, aes(x=Performance.Tag,y=No.of.Inquiries.in.last.6.months, fill=Performance.Tag))+ geom_boxplot(width=0.2)+
+          ggplot(credit_card_eda, aes(x=Performance.Tag,y=No.of.Inquiries.in.last.6.months..excluding.home...auto.loans., fill=Performance.Tag))+ geom_boxplot(width=0.2)+
             coord_flip() + box_theme_y,
           ggplot(credit_card_eda, aes(x=Performance.Tag,y=No.of.PL.trades.opened.in.last.12.months, fill=Performance.Tag))+ geom_boxplot(width=0.2)+
             coord_flip() + box_theme_y,
@@ -1020,7 +1020,6 @@ chisq.test(cc_Total.No.of.Trades )
 #--------------------------------------------------------------------
 # Prepare data for modeling
 #--------------------------------------------------------------------
-
 credit_card_woe_data <- credit_card_eda[, -which(names(credit_card_eda) %in% c("IncomeRange", "Residence.Years", "Company.Years", "x_Avgas.CC.Utilization.in.last.12.months" ))]
 
 credit_card_woe_data$Performance.Tag <- as.numeric(levels(credit_card_woe_data$Performance.Tag))[credit_card_woe_data$Performance.Tag]
@@ -1047,7 +1046,6 @@ print(IV$Tables$Avgas.CC.Utilization.in.last.12.months, row.names=FALSE)
 # [52,71]                                   7000 0.10097659  0.56351111 0.29370218
 # [72,113]                                  7020 0.10126509  0.38040064 0.31119019
 
-
 credit_card_woe_data[(credit_card_woe_data$Avgas.CC.Utilization.in.last.12.months <= 8),]$Avgas.CC.Utilization.in.last.12.months <- -0.79760307  
 credit_card_woe_data[(credit_card_woe_data$Avgas.CC.Utilization.in.last.12.months >= 9)
                       & (credit_card_woe_data$Avgas.CC.Utilization.in.last.12.months <= 11),]$Avgas.CC.Utilization.in.last.12.months <- -0.67128981                    
@@ -1055,8 +1053,6 @@ credit_card_woe_data[(credit_card_woe_data$Avgas.CC.Utilization.in.last.12.month
                       & (credit_card_woe_data$Avgas.CC.Utilization.in.last.12.months <= 14),]$Avgas.CC.Utilization.in.last.12.months <- -0.46771427                     
 credit_card_woe_data[(credit_card_woe_data$Avgas.CC.Utilization.in.last.12.months >= 15)
                       & (credit_card_woe_data$Avgas.CC.Utilization.in.last.12.months <= 22),]$Avgas.CC.Utilization.in.last.12.months <- -0.06395137                     
-credit_card_woe_data[(credit_card_woe_data$Avgas.CC.Utilization.in.last.12.months >= 23)
-                      & (credit_card_woe_data$Avgas.CC.Utilization.in.last.12.months <= 36),]$Avgas.CC.Utilization.in.last.12.months <- 0.46472310                     
 credit_card_woe_data[(credit_card_woe_data$Avgas.CC.Utilization.in.last.12.months >= 23)
                       & (credit_card_woe_data$Avgas.CC.Utilization.in.last.12.months <= 36),]$Avgas.CC.Utilization.in.last.12.months <- 0.46472310                     
 credit_card_woe_data[(credit_card_woe_data$Avgas.CC.Utilization.in.last.12.months >= 37)
@@ -1498,10 +1494,10 @@ print(IV$Tables$AgeCategory ,row.names=FALSE)
 # Adults                           64235 0.926604446     0.003911577     1.420286e-05
 # Seniors                          4795  0.069168963    -0.025015444      5.699471e-05
 # Youth                            293  0.004226591     -0.590204941      1.190403e-03
-
-credit_card_woe_data[(credit_card_woe_data$AgeCategory  ==Adults),]$AgeCategory <- 0.003911577 
-credit_card_woe_data[(credit_card_woe_data$AgeCategory == Seniors),]$AgeCategory <- -0.025015444 
-credit_card_woe_data[(credit_card_woe_data$AgeCategory == Youth ),]$AgeCategory <- -0.590204941
+credit_card_woe_data$AgeCategory
+credit_card_woe_data[(credit_card_woe_data$AgeCategory  =="Adults"),]$AgeCategory <- 0.003911577 
+credit_card_woe_data[(credit_card_woe_data$AgeCategory == "Seniors"),]$AgeCategory <- -0.025015444 
+credit_card_woe_data[(credit_card_woe_data$AgeCategory == "Youth" ),]$AgeCategory <- -0.590204941
 credit_card_woe_data$AgeCategory <- as.numeric(credit_card_woe_data$AgeCategory)
 
 ##24.Type.of.residence WOE analysis and mutation if required
