@@ -2093,6 +2093,7 @@ importance <- data.frame(importance)
 #-------------------------------------------------
 # Model Deployment - Application Score Card
 #-------------------------------------------------
+
 data_score_card <- credit_card_regression
 colnames(data_score_card)
 data_score_card$prob_bad<- predict(final_model_LR, type = "response", 
@@ -2147,10 +2148,19 @@ data_score_card$orig_outstanding_amount <- credit_card_eda$Outstanding.Balance
 
 data_score_card$expected_loss = data_score_card$prob_bad * data_score_card$orig_outstanding_amount * 0.7
 
-total_expected_loass = sum(data_score_card$expected_loss)
-print(total_expected_loass)
+potential_credit_loss_df <- data_score_card[, c("Performance.Tag", "prob_bad","orig_outstanding_amount")]
+
+cc_loss_default_cust <- potential_credit_loss_df[(potential_credit_loss_df$Performance.Tag == 1),]                                             
+
+cc_loss_default_cust$expected_loss <- cc_loss_default_cust$prob_bad * cc_loss_default_cust$orig_outstanding_amount * 0.7
+
+total_expected_loss = sum(data_score_card$expected_loss)
+total_extected_loss_default_cust <- sum(cc_loss_default_cust$expected_loss)
+print(total_expected_loss)
+print(total_extected_loss_default_cust)
 
 #auto rejection rate or 
 
 auto_rejection_rate <- sum(data_score_card$pred_performance_tag)/nrow(data_score_card)
 auto_approval_rate = 1 - auto_rejection_rate
+
