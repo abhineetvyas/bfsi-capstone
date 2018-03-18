@@ -342,7 +342,7 @@ ggplot(data = credit_card_eda, aes(x=No.of.times.30.DPD.or.worse.in.last.12.mont
   geom_histogram(stat = "count")
 
 #18. Avgas.CC.Utilization.in.last.12.months
-
+sum(is.na(credit_card_eda$Avgas.CC.Utilization.in.last.12.months))
 # 1020 records having NA's it means it requires treatment
 # for these cases replacing the same with median value or WOE Value 
 credit_card_eda[is.na(credit_card_eda$Avgas.CC.Utilization.in.last.12.months),]$Avgas.CC.Utilization.in.last.12.months <- 30
@@ -363,7 +363,6 @@ plot_grid(ggplot(credit_card_eda, aes(Avgas.CC.Utilization.in.last.12.months,fil
 # Avgas.CC.Utilization.in.last.12.months looks strong predictor for the performance tag 
 
 #19. No.of.trades.opened.in.last.6.months
-
 # 1 Na can be removed
 credit_card_eda <- credit_card_eda[!is.na(credit_card_eda$No.of.trades.opened.in.last.6.months),]
 ggplot(data = credit_card_eda, aes(x=No.of.trades.opened.in.last.6.months)) + 
@@ -560,6 +559,7 @@ plot_grid(ggplot(data = credit_card_eda, aes(x=Presence.of.open.auto.loan, fill 
             geom_bar(position = "fill", stat = "count"))
 # By looking at plot Presence.of.open.auto.loan may be an important predictor.
 
+#Grouping the outstanding amount for DPD values to find pattern
 credit_card_eda_30DPD_grp_6 <- group_by(credit_card_eda, No.of.times.30.DPD.or.worse.in.last.6.months,Performance.Tag)
 credit_card_eda_30DPD_6 <-  summarise(credit_card_eda_30DPD_grp_6,AvgOutstanding = mean(Outstanding.Balance))
 credit_card_eda_60DPD_grp_6 <- group_by(credit_card_eda, No.of.times.60.DPD.or.worse.in.last.6.months,Performance.Tag)
@@ -599,13 +599,13 @@ plot_grid(
                                            col = Performance.Tag)) + geom_line(size = 1.5)
 )
 
-
-credit_card_eda_30DPD_6 <-  summarise(credit_card_eda_30DPD_grp_6,AvgIncome = median(Income))
-credit_card_eda_60DPD_6 <-  summarise(credit_card_eda_60DPD_grp_6,AvgIncome = median(Income))
-credit_card_eda_90DPD_6 <-  summarise(credit_card_eda_90DPD_grp_6,AvgIncome = median(Income))
-credit_card_eda_30DPD_12 <-  summarise(credit_card_eda_30DPD_grp_12,AvgIncome = median(Income))
-credit_card_eda_60DPD_12 <-  summarise(credit_card_eda_60DPD_grp_12,AvgIncome = median(Income))
-credit_card_eda_90DPD_12 <-  summarise(credit_card_eda_90DPD_grp_12,AvgIncome = median(Income))
+#Grouping the income for DPD values to find pattern
+credit_card_eda_30DPD_6 <-  summarise(credit_card_eda_30DPD_grp_6,AvgIncome = mean(Income))
+credit_card_eda_60DPD_6 <-  summarise(credit_card_eda_60DPD_grp_6,AvgIncome = mean(Income))
+credit_card_eda_90DPD_6 <-  summarise(credit_card_eda_90DPD_grp_6,AvgIncome = mean(Income))
+credit_card_eda_30DPD_12 <-  summarise(credit_card_eda_30DPD_grp_12,AvgIncome = mean(Income))
+credit_card_eda_60DPD_12 <-  summarise(credit_card_eda_60DPD_grp_12,AvgIncome = mean(Income))
+credit_card_eda_90DPD_12 <-  summarise(credit_card_eda_90DPD_grp_12,AvgIncome = mean(Income))
 
 plot_grid(
   ggplot(data = credit_card_eda_30DPD_6, aes(x=No.of.times.30.DPD.or.worse.in.last.6.months,
@@ -666,14 +666,6 @@ plot_grid(ggplot(credit_card_eda, aes(x=Performance.Tag,y=Outstanding.Balance.in
 # Variable 'No.of.Inquiries.in.last.6.months'  sees large number of default in the range of 0 to 2.5 and  it has very less outliers
 
 # Variable 'Total.No.of.Trades'  has large number of outliers
-
-#the above box plot shows that the below variables have significant outliers
-# Outstanding.Balance.in.lakh, Total.No.of.Trades
-
-#less outliers are observed for below variables
-# No.of.Inquiries.in.last.12.months, No.of.trades.opened.in.last.12.months, No.of.trades.opened.in.last.6.months
-
-#outlier treatment for Outstanding.Balance.in.lakh using capping
 
 #For  values that lie outside the 1.5 * IQR limits, we could cap it by replacing those observations outside the lower limit with the value of 5th %ile 
 #and those that lie above the upper limit, with the value of 95th %ile. Below is a sample code that achieves this.
@@ -1630,7 +1622,7 @@ summary(final_model_demo)
 
 ### Model Evaluation
 
-#predicted probabilities of Attrition 1 for test data
+#predicted probabilities of credit card defaulter 1 for test data
 
 test_demo_pred = predict(final_model_demo, type = "response", 
                     newdata = test_demo[,-42])
@@ -1807,7 +1799,7 @@ final_model_LR<- model_9
 summary(final_model_LR)
 
 ### Model Evaluation
-#predicted probabilities of Attrition 1 for test data
+#predicted probabilities of credit card defaulter 1 for test data
 
 test_pred = predict(final_model_LR, type = "response", 
                     newdata = test[,-42])
@@ -1901,14 +1893,14 @@ max(ks_table_test)
 
 #plot ROC 
 # ROC curves
-plot(performance_measures_test, main = "ROC curve for Employee Attrition",  colorize=T, lwd = 3)
+plot(performance_measures_test, main = "ROC curve for Credit Card Defaulters",  colorize=T, lwd = 3)
 
 #plot ROC chart using pROC package as it gives the better visualization
 glm_link_scores <- predict(final_model_LR,  test[,-1], type="link")
 glm_response_scores <- predict(final_model_LR,  test[,-1], type="response")
 
 plot(roc(test$Performance.Tag, glm_response_scores, direction="<"),
-     col="green", lwd=3, main="ROC curve of Employee Attrition")
+     col="green", lwd=3, main="ROC curve for Credit Card Defaulters")
 
 
 # Lift & Gain Chart 
@@ -1948,7 +1940,7 @@ default_decile
 #-------------------------------------------------
 # Data Modeling - Decision Tree
 #-------------------------------------------------
-str(credit_card_eda$Performance.Tag)
+
 Credit_card_DT <- credit_card_eda[, -which(names(credit_card_eda) %in% c("IncomeRange", "Residence.Years", "Company.Years", "x_Avgas.CC.Utilization.in.last.12.months", "AgeCategory" ))]
 numericcols <- c( "No.of.dependents" ,"Income" ,"No.of.months.in.current.residence" ,"No.of.months.in.current.company",                                
                   "No.of.times.90.DPD.or.worse.in.last.6.months" ,"No.of.times.60.DPD.or.worse.in.last.6.months"  ,                 
