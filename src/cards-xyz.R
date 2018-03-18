@@ -1799,7 +1799,7 @@ final_model_LR<- model_9
 summary(final_model_LR)
 
 ### Model Evaluation
-#predicted probabilities of credit card defaulter 1 for test data
+#predicted probabilities of credit card defaulters for test data
 
 test_pred = predict(final_model_LR, type = "response", 
                     newdata = test[,-42])
@@ -1969,8 +1969,6 @@ tree.model1 <-  rpart(Performance.Tag ~ ., data=train_dt, method= "class",
                       control=rpart.control( minsplit=10,cp=0.0001))
 plot(tree.model1)
 
-stopCluster(cl)
-
 # Increasing the minsplit two fold to 20 
 tree.model2 <-  rpart(Performance.Tag ~ ., data=train_dt, method= "class", 
                       control=rpart.control(minsplit=20, cp=0.0001))
@@ -2103,16 +2101,22 @@ offset_factorOdds <- 400 - (factorOdds*log(10)) # 10:1 at a score of 400
 data_score_card$score <- offset_factorOdds + factorOdds * data_score_card$log_odds_good
 
 cut_off_score <- offset_factorOdds + factorOdds * log((1-0.049)/0.049)
-cut_off_score
+cut_off_score #419.1333
 
 #plot of score card vs odds(good)
 ggplot(data = data_score_card, aes(x=odds_good,
                                    y = score,
                                    col = score)) + geom_line(size = 1.5)
-summary(data_score_card$score)
+#let us check score  disribution
+ggplot(data_score_card, aes(score,fill = Performance.Tag))+ geom_histogram(binwidth = 10, colour='black') 
 
+#box plot of score card
+ggplot(data = data_score_card, aes(y=score, x= Performance.Tag)) + 
+  geom_boxplot()
+        
 #total number of good customers
 nrow(data_score_card[(data_score_card$score >= cut_off_score),]) 
+#score distribution chart shows that after cutoff score of 419, numbers of defaulters are decreasing
 
 #total customers
 nrow(data_score_card)
