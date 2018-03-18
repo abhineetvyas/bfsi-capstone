@@ -2117,6 +2117,10 @@ ggplot(data = data_score_card, aes(x=odds_good,
                                    col = score)) + geom_line(size = 1.5)
 #let us check score  disribution
 ggplot(data_score_card, aes(score,fill = Performance.Tag))+ geom_histogram(binwidth = 10, colour='black') 
+
+#box plot of score card
+ggplot(data = data_score_card, aes(y=score, x= Performance.Tag)) + 
+  geom_boxplot()
         
 #total number of good customers
 nrow(data_score_card[(data_score_card$score >= cut_off_score),]) 
