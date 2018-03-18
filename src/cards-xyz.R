@@ -1630,7 +1630,7 @@ summary(final_model_demo)
 
 ### Model Evaluation
 
-#predicted probabilities of Attrition 1 for test data
+#predicted probabilities of dcredit card defaulters for test data
 
 test_demo_pred = predict(final_model_demo, type = "response", 
                     newdata = test_demo[,-42])
@@ -1807,7 +1807,7 @@ final_model_LR<- model_9
 summary(final_model_LR)
 
 ### Model Evaluation
-#predicted probabilities of Attrition 1 for test data
+#predicted probabilities of credit card defaulters for test data
 
 test_pred = predict(final_model_LR, type = "response", 
                     newdata = test[,-42])
