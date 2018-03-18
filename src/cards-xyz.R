@@ -1013,7 +1013,11 @@ IV <- create_infotables(data=credit_card_woe_data, y="Performance.Tag", bins=10,
 
 IV$Summary
 
-plot_infotables(IV, IV$Summary$Variable[1:4], same_scales=TRUE)
+plot_infotables(IV, IV$Summary$Variable[1:6], same_scales=TRUE)
+plot_infotables(IV, IV$Summary$Variable[7:12], same_scales=TRUE)
+plot_infotables(IV, IV$Summary$Variable[13:18], same_scales=TRUE)
+plot_infotables(IV, IV$Summary$Variable[19:24], same_scales=TRUE)
+plot_infotables(IV, IV$Summary$Variable[25:28], same_scales=TRUE)
 
 #1. Avgas.CC.Utilization.in.last.12.months variable WOE analysis and mutation if required
 print(IV$Tables$Avgas.CC.Utilization.in.last.12.months, row.names=FALSE)
@@ -1591,8 +1595,8 @@ test_demo = credit_card_demographic[!(indices_demo),]
 model_demo_1 = glm(Performance.Tag ~ ., data = train_demo, family = "binomial")
 summary(model_demo_1)
 
-model_demo_2<- stepAIC(model_demo_1, direction="both")
-summary(model_demo_2)
+#model_demo_2<- stepAIC(model_demo_1, direction="both")
+#summary(model_demo_2)
 
 model_demo_3 <- glm(Performance.Tag ~ Gender + No.of.dependents + Income + No.of.months.in.current.residence + 
                       No.of.months.in.current.company + Age, family = "binomial", data = train_demo)
@@ -1622,7 +1626,7 @@ summary(final_model_demo)
 
 ### Model Evaluation
 
-#predicted probabilities of credit card defaulter 1 for test data
+#predicted probabilities of credit card defaulters for test data
 
 test_demo_pred = predict(final_model_demo, type = "response", 
                     newdata = test_demo[,-42])
@@ -1978,7 +1982,7 @@ tree.model2$variable.importance
 # We can further simplify the tree by increasing minsplit
 tree.model3 <-  rpart(Performance.Tag ~ ., data=train_dt, method= "class", 
                       control=rpart.control(minsplit=30, minbucket = 15, cp=0.0001))
-plot(tree.model3)
+prp(tree.model3, box.palette = "Reds", tweak = 1.2)
 
 # Model Evaluation for tree.model2 and tree.model3
 # using test data from now on
@@ -2023,6 +2027,9 @@ test_rf <- Credit_card_RM[!split_indices, ]
 
 creditcard_rf <- randomForest(Performance.Tag ~., data = train_rf, proximity = F, do.trace = T, mtry = 5)
 
+(VI_F=importance(creditcard_rf))
+varImpPlot(creditcard_rf,type=2)
+#------------------------
 # Predict response for test data
 
 rf_pred <- predict(creditcard_rf, test_rf[, -28], type = "prob")
