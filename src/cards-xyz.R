@@ -1901,14 +1901,14 @@ max(ks_table_test)
 
 #plot ROC 
 # ROC curves
-plot(performance_measures_test, main = "ROC curve for Employee Attrition",  colorize=T, lwd = 3)
+plot(performance_measures_test, main = "ROC curve for Credit card defaulters",  colorize=T, lwd = 3)
 
 #plot ROC chart using pROC package as it gives the better visualization
 glm_link_scores <- predict(final_model_LR,  test[,-1], type="link")
 glm_response_scores <- predict(final_model_LR,  test[,-1], type="response")
 
 plot(roc(test$Performance.Tag, glm_response_scores, direction="<"),
-     col="green", lwd=3, main="ROC curve of Employee Attrition")
+     col="green", lwd=3, main="ROC curve of customers default")
 
 
 # Lift & Gain Chart 
@@ -1976,8 +1976,6 @@ anyNA(Credit_card_DT)
 tree.model1 <-  rpart(Performance.Tag ~ ., data=train_dt, method= "class", 
                       control=rpart.control( minsplit=10,cp=0.0001))
 plot(tree.model1)
-
-stopCluster(cl)
 
 # Increasing the minsplit two fold to 20 
 tree.model2 <-  rpart(Performance.Tag ~ ., data=train_dt, method= "class", 
@@ -2111,16 +2109,18 @@ offset_factorOdds <- 400 - (factorOdds*log(10)) # 10:1 at a score of 400
 data_score_card$score <- offset_factorOdds + factorOdds * data_score_card$log_odds_good
 
 cut_off_score <- offset_factorOdds + factorOdds * log((1-0.049)/0.049)
-cut_off_score
+cut_off_score #419.1333
 
 #plot of score card vs odds(good)
 ggplot(data = data_score_card, aes(x=odds_good,
                                    y = score,
                                    col = score)) + geom_line(size = 1.5)
-summary(data_score_card$score)
-
+#let us check score  disribution
+ggplot(data_score_card, aes(score,fill = Performance.Tag))+ geom_histogram(binwidth = 10, colour='black') 
+        
 #total number of good customers
 nrow(data_score_card[(data_score_card$score >= cut_off_score),]) 
+#score distribution chart shows that after cutoff score of 419, numbers of defaulters are decreasing
 
 #total customers
 nrow(data_score_card)
